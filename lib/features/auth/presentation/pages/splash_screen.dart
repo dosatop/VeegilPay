@@ -11,9 +11,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-    final SecureStorageService storage =
-      SecureStorageService();
-
+  final SecureStorageService storage = SecureStorageService();
 
   @override
   void initState() {
@@ -24,8 +22,6 @@ class _SplashScreenState extends State<SplashScreen> {
     });
   }
 
-  
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,7 +30,11 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/logo.png', width: 110),
+            Image.asset(
+              'assets/images/logo-removebg-preview.png',
+              width: 110,
+              // color: Colors.transparent,
+            ),
             const SizedBox(height: 24),
             const Text(
               'VeegilPay',

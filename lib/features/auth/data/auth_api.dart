@@ -1,4 +1,8 @@
+import 'package:dio/dio.dart';
+import 'package:veegil_pay/core/errors/api_error_handler.dart';
+import 'package:veegil_pay/core/errors/app_exception.dart';
 import 'package:veegil_pay/features/auth/models/signup_request.dart';
+import 'package:veegil_pay/features/auth/models/user_response.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../models/login_request.dart';
@@ -10,26 +14,38 @@ class AuthApi {
   AuthApi(this.dioClient);
 
   Future<LogInResponse> signup(SignupRequest request) async {
-    final response = await dioClient.dio.post(
-      '/auth/signup',
-      data: request.toJson(),
-    );
+    try {
+      final response = await dioClient.dio.post(
+        '/auth/signup',
+        data: request.toJson(),
+      );
 
-    return LogInResponse.fromJson(response.data);
+      return LogInResponse.fromJson(response.data);
+    } on DioException catch (error) {
+      throw AppException(ApiErrorHandler.getMessage(error));
+    }
   }
 
   Future<LogInResponse> login(LogInRequest request) async {
-    final response = await dioClient.dio.post(
-      '/auth/login',
-      data: request.toJson(),
-    );
+    try {
+      final response = await dioClient.dio.post(
+        '/auth/login',
+        data: request.toJson(),
+      );
 
-    return LogInResponse.fromJson(response.data);
+      return LogInResponse.fromJson(response.data);
+    } on DioException catch (error) {
+      throw AppException(ApiErrorHandler.getMessage(error));
+    }
   }
 
-  Future<LogInResponse> getUser() async {
-    final response = await dioClient.dio.get('/auth/me');
+  Future<UserResponse> getUser() async {
+    try {
+      final response = await dioClient.dio.get('/auth/me');
 
-    return LogInResponse.fromJson(response.data);
+      return UserResponse.fromJson(response.data);
+    } on DioException catch (error) {
+      throw AppException(ApiErrorHandler.getMessage(error));
+    }
   }
 }

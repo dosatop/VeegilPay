@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:veegil_pay/core/theme/app_colors.dart';
+import 'package:veegil_pay/core/widgets/overlay_pill.dart';
 import 'package:veegil_pay/features/dashboard/provider/dashboard_provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,30 +17,41 @@ class DashboardPage extends ConsumerStatefulWidget {
 class _DashboardPageState extends ConsumerState<DashboardPage> {
   bool showBalance = true;
   final formatter = NumberFormat("#,###");
+  DateTime? _lastBackPressed;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final user = ref.watch(userProvider);
 
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
 
+        final now = DateTime.now();
+
+        if (_lastBackPressed == null ||
+            now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
+          _lastBackPressed = now;
+
+          showOverlayPill(context, "Press back again to exit");
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               // HEADER
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-
                     children: [
                       Text(
                         "Welcome back",
@@ -59,19 +72,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     ],
                   ),
 
-                  CircleAvatar(
-                    backgroundColor: AppColors.primary,
-                    child: const Icon(Icons.person, color: AppColors.white),
+                  GestureDetector(
+                    onTap: () => context.go("/profile"),
+                    child: CircleAvatar(
+                      backgroundColor: AppColors.primary,
+                      child: const Icon(Icons.person, color: AppColors.white),
+                    ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
 
               // BALANCE CARD
               Container(
                 width: double.infinity,
-
                 padding: const EdgeInsets.all(20),
 
                 decoration: BoxDecoration(
@@ -81,18 +96,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-
                   children: [
                     const Text(
                       "Available Balance",
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                      style: TextStyle(color: Colors.white70),
                     ),
 
                     const SizedBox(height: 10),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                       children: [
                         Text(
                           showBalance
@@ -100,7 +113,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                               : "******",
 
                           style: theme.textTheme.headlineMedium?.copyWith(
-                            color: AppColors.white,
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -116,29 +129,54 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                             showBalance
                                 ? Icons.visibility
                                 : Icons.visibility_off,
-
-                            color: AppColors.white,
+                            color: Colors.white,
                           ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 10),
 
-                    Text(
-                      "Account Number: ${user?.phoneNumber ?? ""}",
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(
+                          ClipboardData(text: user?.phoneNumber ?? ""),
+                        );
 
-                      style: const TextStyle(color: Colors.white70),
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Account number copied"),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "Account Number: ${user?.phoneNumber ?? ""}",
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          const Icon(
+                            Icons.copy,
+                            size: 16,
+                            color: Colors.white70,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
 
               Text(
                 "Quick Actions",
-
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -148,9 +186,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                 children: [
-                  _actionButton(context, Icons.send, "Send", () {}),
+                  _actionButton(
+                    context,
+                    Icons.send,
+                    "Send",
+                    () => context.push("/transfer"),
+                  ),
 
                   _actionButton(
                     context,
@@ -159,42 +201,81 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     () => context.push('/deposit'),
                   ),
 
-                  _actionButton(context, Icons.payment, "Bills", () {}),
+                  _actionButton(
+                    context,
+                    Icons.payment,
+                    "Bills",
+                    () => context.push('/bills'),
+                  ),
 
-                  _actionButton(context, Icons.wallet, "Wallet", () {}),
+                  _actionButton(
+                    context,
+                    Icons.wallet,
+                    "Withdraw",
+                    () => context.push('/withdraw'),
+                  ),
                 ],
               ),
 
               const SizedBox(height: 35),
 
-              Text(
-                "Recent Transactions",
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Recent Transactions",
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
 
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                  TextButton(
+                    onPressed: () {
+                      final shell = StatefulNavigationShell.of(context);
+                      shell.goBranch(1);
+                    },
+                    child: const Text(
+                      "See all",
+                      style: TextStyle(color: AppColors.primary),
+                    ),
+                  ),
+                ],
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 10),
 
-              Container(
-                width: double.infinity,
+              Expanded(
+                child: ListView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _transactionPreview(
+                      icon: Icons.arrow_upward,
+                      title: "Transfer Out",
+                      date: "Today",
+                      amount: "-₦5,000",
+                      color: Colors.red,
+                    ),
 
-                padding: const EdgeInsets.all(20),
+                    const Divider(),
 
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(15),
-                ),
+                    _transactionPreview(
+                      icon: Icons.arrow_downward,
+                      title: "Transfer In",
+                      date: "Yesterday",
+                      amount: "+₦25,000",
+                      color: Colors.green,
+                    ),
 
-                child: Text(
-                  "No transactions yet",
+                    const Divider(),
 
-                  textAlign: TextAlign.center,
-
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.grey,
-                  ),
+                    _transactionPreview(
+                      icon: Icons.account_balance_wallet,
+                      title: "Deposit",
+                      date: "Aug 4",
+                      amount: "+₦50,000",
+                      color: Colors.blue,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -229,6 +310,53 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           const SizedBox(height: 8),
 
           Text(title, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+
+  Widget _transactionPreview({
+    required IconData icon,
+    required String title,
+    required String date,
+    required String amount,
+    required Color color,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+
+      leading: CircleAvatar(
+        backgroundColor: color.withValues(alpha: 0.15),
+        child: Icon(icon, color: color),
+      ),
+
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+
+      subtitle: Text(date),
+
+      trailing: Text(
+        amount,
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _serviceCard(IconData icon, String title) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.primary, size: 30),
+
+          const SizedBox(height: 10),
+
+          Text(title),
         ],
       ),
     );

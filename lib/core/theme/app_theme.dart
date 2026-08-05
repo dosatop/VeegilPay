@@ -66,7 +66,6 @@ class AppTheme {
 
     //   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     // ),
-
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,

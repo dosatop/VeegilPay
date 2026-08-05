@@ -8,25 +8,29 @@ import 'package:veegil_pay/core/widgets/custom_textfield.dart';
 import 'package:veegil_pay/core/widgets/overlay_pill.dart';
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
 import 'package:veegil_pay/features/dashboard/provider/dashboard_provider.dart';
-import 'package:veegil_pay/features/deposit/model/deposit_request.dart';
 import 'package:veegil_pay/features/transaction/provider/transaction_history_provider.dart';
 import 'package:veegil_pay/features/transaction/provider/transaction_provider.dart';
+import 'package:veegil_pay/features/transfer/models/transfer_request.dart';
 
-class DepositPage extends ConsumerStatefulWidget {
-  const DepositPage({super.key});
+class TransferPage extends ConsumerStatefulWidget {
+  const TransferPage({super.key});
 
   @override
-  ConsumerState<DepositPage> createState() => _DepositPageState();
+  ConsumerState<TransferPage> createState() => _TransferPageState();
 }
 
-class _DepositPageState extends ConsumerState<DepositPage> {
+class _TransferPageState extends ConsumerState<TransferPage> {
   final _formKey = GlobalKey<FormState>();
+
+  final _receiverController = TextEditingController();
 
   final _amountController = TextEditingController();
 
   @override
   void dispose() {
+    _receiverController.dispose();
     _amountController.dispose();
+
     super.dispose();
   }
 
@@ -34,11 +38,12 @@ class _DepositPageState extends ConsumerState<DepositPage> {
   Widget build(BuildContext context) {
     final transactionState = ref.watch(transactionProvider);
 
-    final theme = Theme.of(context);
     final user = ref.watch(userProvider);
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Deposit")),
+      appBar: AppBar(title: const Text("Transfer")),
 
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -51,7 +56,7 @@ class _DepositPageState extends ConsumerState<DepositPage> {
 
             children: [
               Text(
-                "Add Money",
+                "Send Money",
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.black,
@@ -59,6 +64,30 @@ class _DepositPageState extends ConsumerState<DepositPage> {
               ),
 
               const SizedBox(height: 25),
+
+              CustomTextfield(
+                controller: _receiverController,
+
+                hintText: "Receiver phone number",
+
+                iconType: Icons.phone,
+
+                textFieldName: "Receiver",
+
+                textInputType: TextInputType.phone,
+
+                obscureText: false,
+
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Receiver phone number is required";
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 20),
 
               CustomTextfield(
                 controller: _amountController,
@@ -110,42 +139,40 @@ class _DepositPageState extends ConsumerState<DepositPage> {
                             return;
                           }
 
-                          final request = DepositRequest(
-                            phoneNumber: user!.phoneNumber,
+                          final request = TransferRequest(
+                            phoneNumber: _receiverController.text.trim(),
 
                             amount: int.parse(
                               _amountController.text.replaceAll(',', ''),
                             ),
                           );
 
-                          final success = await ref
+                          final errorMessage = await ref
                               .read(transactionProvider.notifier)
-                              .deposit(request);
+                              .transfer(request);
 
                           if (!mounted) return;
 
-                          if (success) {
+                          if (errorMessage == null) {
                             await ref.read(authProvider.notifier).refreshUser();
+
                             await ref
                                 .read(transactionHistoryProvider.notifier)
                                 .refresh();
 
                             if (!mounted) return;
 
-                            _amountController.clear();
+                            showOverlayPill(context, "Transfer Successful");
 
-                            showOverlayPill(context, "Deposit Successful");
+                            _receiverController.clear();
+
+                            _amountController.clear();
 
                             context.pop();
                           } else {
-                            final errorMessage = ref
-                                .read(transactionProvider)
-                                .error;
-
                             showOverlayPill(
                               context,
-                              errorMessage?.toString() ??
-                                  "Something went wrong",
+                              getTransferErrorMessage(errorMessage),
                             );
                           }
                         },
@@ -153,15 +180,13 @@ class _DepositPageState extends ConsumerState<DepositPage> {
                   child: transactionState.isLoading
                       ? const SizedBox(
                           height: 22,
-
                           width: 22,
-
                           child: CircularProgressIndicator(
                             color: AppColors.white,
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text("Deposit"),
+                      : const Text("Send Money"),
                 ),
               ),
             ],
@@ -169,5 +194,33 @@ class _DepositPageState extends ConsumerState<DepositPage> {
         ),
       ),
     );
+  }
+
+  String getTransferErrorMessage(String? error) {
+    if (error == null || error.isEmpty) {
+      return "Transfer failed";
+    }
+
+    if (error.contains("RECIPIENT_NOT_FOUND") ||
+        error.contains("Recipient account not found")) {
+      return "The receiver account does not exist";
+    }
+
+    if (error.contains("INSUFFICIENT_FUNDS") ||
+        error.contains("Insufficient funds")) {
+      return "You do not have enough balance";
+    }
+
+    if (error.contains("TRANSFER_TO_SELF") ||
+        error.contains("cannot transfer to yourself")) {
+      return "You cannot transfer money to yourself";
+    }
+
+    if (error.contains("RECIPIENT_REQUIRED") ||
+        error.contains("recipient is required")) {
+      return "Please enter a receiver phone number";
+    }
+
+    return "Unable to complete transfer. Please try again";
   }
 }

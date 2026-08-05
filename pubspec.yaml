@@ -44,6 +44,8 @@ dependencies:
   flutter_svg: ^2.3.0
   intl: ^0.20.3
   fl_chart: ^1.2.0
+  syncfusion_flutter_charts: ^34.1.33
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -79,7 +81,7 @@ flutter_native_splash:
   image: assets/images/logo.png
 
   android_12:
-    color: "#0B5ED7"
+    color: "#FFFFFF"
     image: assets/images/logo.png
 
 flutter_launcher_icons:

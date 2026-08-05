@@ -1,4 +1,5 @@
 import 'package:veegil_pay/features/auth/models/signup_request.dart';
+import 'package:veegil_pay/features/auth/models/user_response.dart';
 
 import '../../../core/storage/secure_storage_service.dart';
 import '../models/login_request.dart';
@@ -33,7 +34,7 @@ class AuthRepository {
     await storage.saveAccountNumber(response.user.phoneNumber);
   }
 
-  Future<LogInResponse> getUser() async {
+  Future<UserResponse> getUser() async {
     return await authApi.getUser();
   }
 

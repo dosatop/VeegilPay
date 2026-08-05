@@ -8,6 +8,7 @@ import 'package:veegil_pay/features/auth/models/login_info.dart';
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:veegil_pay/features/auth/models/login_request.dart';
+import 'package:veegil_pay/features/auth/provider/saved_login_provider.dart';
 // import 'package:veegil_pay/core/widgets/horizontal_divider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -26,52 +27,35 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _rememberMe = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedLogin();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(savedLoginProvider.notifier).loadSavedLogin();
+    });
   }
 
-  Future<void> _loadSavedLogin() async {
-    final storage = ref.read(secureStorageProvider);
-
-    final loginInfo = await storage.getLoginInfo();
-
-    if (loginInfo == null) return;
-
-    if (loginInfo.rememberMe) {
-      setState(() {
-        _phoneController.text = loginInfo.phoneNumber;
-        _passwordController.text = loginInfo.password;
-        _rememberMe = true;
-      });
-    }
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final savedLogin = ref.watch(savedLoginProvider);
+
+    final showPhoneNumberInput = savedLogin.phoneNumber == null;
     final authState = ref.watch(authProvider);
 
-    // ref.listen(authProvider, (previous, next) {
-    //   next.whenOrNull(
-    //     data: (_) {
-    //       context.go('/dashboard');
-    //     },
-
-    //     error: (error, _) {
-    //       ScaffoldMessenger.of(
-    //         context,
-    //       ).showSnackBar(SnackBar(content: Text(error.toString())));
-    //     },
-    //   );
-    // });
     final size = MediaQuery.of(context).size;
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
-      // backgroundColor: const Color.fromARGB(255, 9, 25, 147),
       resizeToAvoidBottomInset: true,
       body: PopScope(
         canPop: false,
@@ -131,7 +115,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                           width: size.width * 0.6,
 
                                           child: Text(
-                                            "Experience effortless banking anytime, anywhere",
+                                            "Experience effortless banking anytime, anywhere.",
                                             style: TextStyle(
                                               color: Colors.white70,
                                               fontSize: size.width * 0.038,
@@ -148,9 +132,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                       ? size.height * 0.05
                                       : size.height * 0.08,
                                 ),
-
-                                // if (!keyboardOpen)
-                                //   Text("VeegilPay"),
                               ],
                             ),
                           ),
@@ -168,27 +149,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                           child: Column(
                             children: [
-                              CustomTextfield(
-                                hintText: "Account Number",
-                                controller: _phoneController,
-                                iconType: Icons.email_outlined,
-                                textFieldName: 'Account number',
-                                textInputType: TextInputType.number,
+                              if (showPhoneNumberInput)
+                                CustomTextfield(
+                                  hintText: "Account Number",
+                                  controller: _phoneController,
+                                  iconType: Icons.email_outlined,
+                                  textFieldName: 'Account number',
+                                  textInputType: TextInputType.number,
 
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return "Account number is required";
-                                  }
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return "Account number is required";
+                                    }
 
-                                  if (value.length < 11) {
-                                    return "Account number has to be 11 digits";
-                                  }
+                                    if (value.length != 11) {
+                                      return "Account number has to be exactly 11 digits";
+                                    }
 
-                                  return null;
-                                },
+                                    return null;
+                                  },
 
-                                obscureText: false,
-                              ),
+                                  obscureText: false,
+                                ),
 
                               const SizedBox(height: 8),
 
@@ -216,55 +198,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 textInputType: TextInputType.visiblePassword,
                               ),
 
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-
-                                children: [
-                                  Row(
-                                    children: [
-                                      Checkbox(
-                                        value: _rememberMe,
-                                        onChanged: (value) async {
-                                          final onChangedValue = value ?? false;
-
-                                          setState(() {
-                                            _rememberMe = onChangedValue;
-                                          });
-                                        },
-                                        activeColor: const Color.fromARGB(
-                                          255,
-                                          9,
-                                          25,
-                                          147,
+                              const SizedBox(height: 20),
+                              SizedBox(
+                                height: 25,
+                                child: _errorMessage == null
+                                    ? null
+                                    : Text(
+                                        _errorMessage!,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 14,
                                         ),
-
-                                        shape: const CircleBorder(),
-
-                                        visualDensity: VisualDensity.compact,
                                       ),
-
-                                      const Text(
-                                        "Remember me",
-                                        style: TextStyle(fontSize: 14),
-                                      ),
-                                    ],
-                                  ),
-
-                                  TextButton(
-                                    onPressed: () {},
-
-                                    child: const Text(
-                                      "Forgot password?",
-                                      style: TextStyle(
-                                        color: Color(0xFF091993),
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ),
-
-                              const SizedBox(height: 10),
                               SizedBox(
                                 width: double.infinity,
                                 height: 50,
@@ -273,14 +220,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   onPressed: authState.isLoading
                                       ? null
                                       : () async {
+                                          FocusScope.of(context).unfocus();
+
                                           if (!_formKey.currentState!
                                               .validate()) {
                                             return;
                                           }
 
+                                          setState(() {
+                                            _errorMessage = null;
+                                          });
+
                                           final request = LogInRequest(
-                                            phoneNumber: _phoneController.text
-                                                .trim(),
+                                            phoneNumber: showPhoneNumberInput
+                                                ? _phoneController.text.trim()
+                                                : savedLogin.phoneNumber!,
                                             password: _passwordController.text
                                                 .trim(),
                                           );
@@ -293,24 +247,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                             secureStorageProvider,
                                           );
                                           if (success) {
-                                            if (_rememberMe) {
-                                              await storage.saveLoginInfo(
-                                                LoginInfo(
-                                                  phoneNumber: _phoneController
-                                                      .text
-                                                      .trim(),
-                                                  password: _passwordController
-                                                      .text
-                                                      .trim(),
-                                                  rememberMe: true,
-                                                ),
-                                              );
-                                            }
+                                            await storage.saveLoginInfo(
+                                              LoginInfo(
+                                                phoneNumber:
+                                                    request.phoneNumber,
+                                              ),
+                                            );
 
-                                            if (!_rememberMe) {
-                                              await storage.clearLoginInfo();
-                                            }
-                                            
+                                            await ref
+                                                .read(
+                                                  savedLoginProvider.notifier,
+                                                )
+                                                .loadSavedLogin();
+
                                             if (!mounted) return;
 
                                             context.go('/dashboard');
@@ -318,13 +267,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                             await storage.clearLoginInfo();
                                             if (!mounted) return;
 
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              const SnackBar(
-                                                content: Text("Login failed"),
-                                              ),
-                                            );
+                                            final errorMessage = ref
+                                                .read(authProvider)
+                                                .error;
+
+                                            setState(() {
+                                              _errorMessage =
+                                                  !showPhoneNumberInput &&
+                                                      (errorMessage
+                                                          .toString()
+                                                          .contains("Invalid"))
+                                                  ? "Incorrect password"
+                                                  : errorMessage?.toString() ??
+                                                        "Login failed";
+                                            });
                                           }
                                         },
 
@@ -345,127 +301,41 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                       : const Text("Login"),
                                 ),
                               ),
-                              // SizedBox(
-                              //   width: double.infinity,
 
-                              //   height: 50,
-
-                              //   child: Consumer<AuthProvider>(
-                              //     builder: (context, auth, child) {
-                              //       return ElevatedButton(
-                              //         onPressed: auth.isLoading
-                              //             ? null
-                              //             : () async {
-                              //                 if (!_formKey.currentState!
-                              //                     .validate()) {
-                              //                   return;
-                              //                 }
-
-                              //                 final success = await auth.login(
-                              //                   LoginRequest(
-                              //                     email: _emailController.text
-                              //                         .trim(),
-
-                              //                     password:
-                              //                         _passwordController.text,
-                              //                   ),
-                              //                 );
-
-                              //                 if (!mounted) return;
-
-                              //                 if (success) {
-                              //                   if (_rememberMe) {
-                              //                     await storageService
-                              //                         .saveLoginInfo(
-                              //                           _emailController.text,
-                              //                           _passwordController
-                              //                               .text,
-                              //                           true,
-                              //                         );
-                              //                   } else {
-                              //                     await storageService
-                              //                         .clearLoginInfo();
-                              //                   }
-
-                              //                   if (!context.mounted) return;
-
-                              //                   Navigator.pushNamedAndRemoveUntil(
-                              //                     context,
-                              //                     '/dashboard',
-                              //                     (route) => false,
-                              //                   );
-                              //                 } else {
-                              //                   print(
-                              //                     "Login failed: ${auth.error}",
-                              //                   );
-                              //                   ScaffoldMessenger.of(
-                              //                     context,
-                              //                   ).showSnackBar(
-                              //                     SnackBar(
-                              //                       content: Text(
-                              //                         "Error: ${auth.error}",
-                              //                       ),
-                              //                     ),
-                              //                   );
-                              //                 }
-                              //               },
-
-                              //         style: ElevatedButton.styleFrom(
-                              //           backgroundColor: const Color.fromARGB(
-                              //             255,
-                              //             9,
-                              //             25,
-                              //             147,
-                              //           ),
-
-                              //           foregroundColor: Colors.white,
-                              //         ),
-
-                              //         child: auth.isLoading
-                              //             ? SizedBox(
-                              //                 width: 24,
-                              //                 height: 24,
-                              //                 child: CircularProgressIndicator(
-                              //                   color: Color.fromARGB(
-                              //                     255,
-                              //                     9,
-                              //                     25,
-                              //                     147,
-                              //                   ),
-                              //                   strokeWidth:
-                              //                       2, // Optional: makes the ring thinner
-                              //                 ),
-                              //               )
-                              //             : const Text("Login"),
-                              //       );
-                              //     },
-                              //   ),
-                              // ),
-                              SizedBox(height: size.height * 0.08),
-
-                              // HorizontalDivider(textString: "OR"),
-                              const SizedBox(height: 15),
-
-                              // AuthTile(
-                              //   authText: "Sign in with Google",
-                              //   imageLink: "lib/assets/svgs/google.svg",
-                              // ),
-                              const SizedBox(height: 12),
-
-                              // AuthTile(
-                              //   authText: "Sign in with Apple",
-                              //   imageLink: "lib/assets/svgs/apple.svg",
-                              // ),
-                              const SizedBox(height: 15),
+                              SizedBox(height: size.height * 0.1),
 
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
 
                                 children: [
-                                  const Text("Don't have an account?"),
+                                  if (showPhoneNumberInput)
+                                    Text("Don't have an account?"),
 
                                   TextButton(
-                                    onPressed: widget.onTogglePage,
+                                    onPressed: () async {
+                                      if (!authState.isLoading) {
+                                        final storage = ref.read(
+                                          secureStorageProvider,
+                                        );
+
+                                        if (showPhoneNumberInput) {
+                                          ref
+                                              .read(savedLoginProvider.notifier)
+                                              .clearSavedLogin();
+
+                                          widget.onTogglePage?.call();
+                                        } else {
+                                          await storage.clearLoginInfo();
+
+                                          ref
+                                              .read(savedLoginProvider.notifier)
+                                              .clearSavedLogin();
+
+                                          _phoneController.clear();
+                                          _passwordController.clear();
+                                        }
+                                      }
+                                    },
 
                                     style: TextButton.styleFrom(
                                       padding: EdgeInsets.only(
@@ -476,8 +346,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                           MaterialTapTargetSize.shrinkWrap,
                                     ),
 
-                                    child: const Text(
-                                      "Sign up",
+                                    child: Text(
+                                      showPhoneNumberInput
+                                          ? "Sign up"
+                                          : "Switch Account",
                                       style: TextStyle(
                                         color: Color(0xFF091993),
                                       ),

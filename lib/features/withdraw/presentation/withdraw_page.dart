@@ -8,18 +8,18 @@ import 'package:veegil_pay/core/widgets/custom_textfield.dart';
 import 'package:veegil_pay/core/widgets/overlay_pill.dart';
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
 import 'package:veegil_pay/features/dashboard/provider/dashboard_provider.dart';
-import 'package:veegil_pay/features/deposit/model/deposit_request.dart';
 import 'package:veegil_pay/features/transaction/provider/transaction_history_provider.dart';
 import 'package:veegil_pay/features/transaction/provider/transaction_provider.dart';
+import 'package:veegil_pay/features/withdraw/model/withdraw_request.dart';
 
-class DepositPage extends ConsumerStatefulWidget {
-  const DepositPage({super.key});
+class WithdrawPage extends ConsumerStatefulWidget {
+  const WithdrawPage({super.key});
 
   @override
-  ConsumerState<DepositPage> createState() => _DepositPageState();
+  ConsumerState<WithdrawPage> createState() => _WithdrawPageState();
 }
 
-class _DepositPageState extends ConsumerState<DepositPage> {
+class _WithdrawPageState extends ConsumerState<WithdrawPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _amountController = TextEditingController();
@@ -34,11 +34,12 @@ class _DepositPageState extends ConsumerState<DepositPage> {
   Widget build(BuildContext context) {
     final transactionState = ref.watch(transactionProvider);
 
-    final theme = Theme.of(context);
     final user = ref.watch(userProvider);
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Deposit")),
+      appBar: AppBar(title: const Text("Withdraw")),
 
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -51,7 +52,7 @@ class _DepositPageState extends ConsumerState<DepositPage> {
 
             children: [
               Text(
-                "Add Money",
+                "Withdraw Money",
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.black,
@@ -62,15 +63,10 @@ class _DepositPageState extends ConsumerState<DepositPage> {
 
               CustomTextfield(
                 controller: _amountController,
-
                 hintText: "Enter amount",
-
                 iconType: Icons.money,
-
                 textFieldName: "Amount",
-
                 textInputType: TextInputType.number,
-
                 obscureText: false,
 
                 inputFormatters: [AmountInputFormatter()],
@@ -98,7 +94,6 @@ class _DepositPageState extends ConsumerState<DepositPage> {
 
               SizedBox(
                 width: double.infinity,
-
                 height: 52,
 
                 child: ElevatedButton(
@@ -106,11 +101,12 @@ class _DepositPageState extends ConsumerState<DepositPage> {
                       ? null
                       : () async {
                           FocusScope.of(context).unfocus();
+
                           if (!_formKey.currentState!.validate()) {
                             return;
                           }
 
-                          final request = DepositRequest(
+                          final request = WithdrawRequest(
                             phoneNumber: user!.phoneNumber,
 
                             amount: int.parse(
@@ -120,7 +116,7 @@ class _DepositPageState extends ConsumerState<DepositPage> {
 
                           final success = await ref
                               .read(transactionProvider.notifier)
-                              .deposit(request);
+                              .withdraw(request);
 
                           if (!mounted) return;
 
@@ -132,9 +128,9 @@ class _DepositPageState extends ConsumerState<DepositPage> {
 
                             if (!mounted) return;
 
-                            _amountController.clear();
+                            showOverlayPill(context, "Withdrawal Successful");
 
-                            showOverlayPill(context, "Deposit Successful");
+                            _amountController.clear();
 
                             context.pop();
                           } else {
@@ -151,17 +147,8 @@ class _DepositPageState extends ConsumerState<DepositPage> {
                         },
 
                   child: transactionState.isLoading
-                      ? const SizedBox(
-                          height: 22,
-
-                          width: 22,
-
-                          child: CircularProgressIndicator(
-                            color: AppColors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text("Deposit"),
+                      ? const CircularProgressIndicator(color: AppColors.white)
+                      : const Text("Withdraw"),
                 ),
               ),
             ],

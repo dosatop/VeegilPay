@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_custom_clippers/flutter_custom_clippers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:veegil_pay/core/network/dio_provider.dart';
 
 import 'package:veegil_pay/core/theme/app_colors.dart';
 import 'package:veegil_pay/core/widgets/custom_textfield.dart';
+import 'package:veegil_pay/features/auth/models/login_info.dart';
 import 'package:veegil_pay/features/auth/models/signup_request.dart';
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
+import 'package:veegil_pay/features/auth/provider/saved_login_provider.dart';
 
 class SignUpPage extends ConsumerStatefulWidget {
   final Function()? onTogglePage;
@@ -25,6 +28,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   final _passwordController = TextEditingController();
 
   final _confirmPasswordController = TextEditingController();
+  String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +100,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
                         if (!keyboardOpen)
                           const Text(
-                            "Register to join seamless banking transactions",
+                            "Register to join hassle-free banking.",
 
                             style: TextStyle(
                               color: Colors.white70,
@@ -135,11 +139,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return "Phone number is required";
+                            return "Phone number required";
                           }
 
                           if (value.length < 11) {
-                            return "Enter a valid phone number";
+                            return "Enter valid phone number";
                           }
 
                           return null;
@@ -156,10 +160,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         iconType: Icons.lock_outline,
 
                         textFieldName: "Password",
-                        showPasswordToggle: true,
 
                         obscureText: true,
 
+                        showPasswordToggle: true,
                         textInputType: TextInputType.visiblePassword,
 
                         validator: (value) {
@@ -185,9 +189,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         iconType: Icons.lock_outline,
 
                         textFieldName: "Confirm Password",
+                        showPasswordToggle: true,
 
                         obscureText: true,
-                        showPasswordToggle: true,
 
                         textInputType: TextInputType.visiblePassword,
 
@@ -204,7 +208,20 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         },
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 25,
+                        child: _errorMessage == null
+                            ? null
+                            : Text(
+                                _errorMessage!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 14,
+                                ),
+                              ),
+                      ),
 
                       SizedBox(
                         width: double.infinity,
@@ -215,13 +232,18 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                           onPressed: authState.isLoading
                               ? null
                               : () async {
+                                  FocusScope.of(context).unfocus();
+
                                   if (!_formKey.currentState!.validate()) {
                                     return;
                                   }
 
+                                  setState(() {
+                                    _errorMessage = null;
+                                  });
+
                                   final request = SignupRequest(
                                     phoneNumber: _phoneController.text.trim(),
-
                                     password: _passwordController.text.trim(),
                                   );
 
@@ -229,15 +251,42 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                                       .read(authProvider.notifier)
                                       .signup(request);
 
-                                  if (!mounted) return;
+                                  final storage = ref.read(
+                                    secureStorageProvider,
+                                  );
 
                                   if (success) {
+                                    await storage.saveLoginInfo(
+                                      LoginInfo(
+                                        phoneNumber: request.phoneNumber,
+                                      ),
+                                    );
+
+                                    await ref
+                                        .read(savedLoginProvider.notifier)
+                                        .loadSavedLogin();
+
                                     _phoneController.clear();
                                     _passwordController.clear();
                                     _confirmPasswordController.clear();
 
-                                    // Navigate only after success
+                                    if (!mounted) return;
+
                                     context.go('/dashboard');
+                                  } else {
+                                    await storage.clearLoginInfo();
+
+                                    if (!mounted) return;
+
+                                    final errorMessage = ref
+                                        .read(authProvider)
+                                        .error;
+
+                                    setState(() {
+                                      _errorMessage =
+                                          errorMessage?.toString() ??
+                                          "Signup failed";
+                                    });
                                   }
                                 },
 
@@ -263,16 +312,32 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: size.height * 0.1),
 
-                      TextButton(
-                        onPressed: widget.onTogglePage,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
 
-                        child: const Text(
-                          "Already have an account? Login",
+                        children: [
+                          const Text("Already have an account?"),
 
-                          style: TextStyle(color: Color(0xFF091993)),
-                        ),
+                          TextButton(
+                            onPressed: () {
+                              if (!authState.isLoading) {
+                                widget.onTogglePage?.call();
+                              }
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.only(left: size.width * 0.01),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+
+                            child: const Text(
+                              "Log in",
+                              style: TextStyle(color: Color(0xFF091993)),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

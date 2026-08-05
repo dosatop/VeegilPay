@@ -28,7 +28,6 @@ class AuthNotifier extends AsyncNotifier<void> {
 
       final response = await repository.login(request);
 
-      // Save user after login
       ref.read(userProvider.notifier).state = response.user;
 
       state = const AsyncData(null);
@@ -62,15 +61,19 @@ class AuthNotifier extends AsyncNotifier<void> {
     }
   }
 
-  Future<void> refreshUser() async {
+  Future<bool> refreshUser() async {
     try {
       final repository = ref.read(authRepositoryProvider);
 
       final response = await repository.getUser();
 
       ref.read(userProvider.notifier).state = response.user;
-    } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
+
+      return true;
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
+
+      return false;
     }
   }
 
