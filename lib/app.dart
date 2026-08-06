@@ -11,6 +11,8 @@ class VeegilPayApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
       theme: AppTheme.lightTheme,
+      // darkTheme: AppTheme.darkTheme,
+      // themeMode: ThemeMode.system,
     );
   }
 }

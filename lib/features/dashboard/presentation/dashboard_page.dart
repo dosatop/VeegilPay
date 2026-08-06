@@ -142,13 +142,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         Clipboard.setData(
                           ClipboardData(text: user?.phoneNumber ?? ""),
                         );
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Account number copied"),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
                       },
 
                       child: Row(

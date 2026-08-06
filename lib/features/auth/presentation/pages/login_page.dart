@@ -115,7 +115,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                           width: size.width * 0.6,
 
                                           child: Text(
-                                            "Experience effortless banking anytime, anywhere.",
+                                            "Experience effortless banking.",
                                             style: TextStyle(
                                               color: Colors.white70,
                                               fontSize: size.width * 0.038,

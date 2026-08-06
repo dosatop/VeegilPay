@@ -6,11 +6,12 @@ import 'package:veegil_pay/core/theme/app_colors.dart';
 import 'package:veegil_pay/core/utils/text_input_formater.dart';
 import 'package:veegil_pay/core/widgets/custom_textfield.dart';
 import 'package:veegil_pay/core/widgets/overlay_pill.dart';
+
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
-import 'package:veegil_pay/features/dashboard/provider/dashboard_provider.dart';
 import 'package:veegil_pay/features/transaction/provider/transaction_history_provider.dart';
 import 'package:veegil_pay/features/transaction/provider/transaction_provider.dart';
 import 'package:veegil_pay/features/transfer/models/transfer_request.dart';
+import 'package:veegil_pay/features/account/provider/account_provider.dart';
 
 class TransferPage extends ConsumerStatefulWidget {
   const TransferPage({super.key});
@@ -23,11 +24,44 @@ class _TransferPageState extends ConsumerState<TransferPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _receiverController = TextEditingController();
-
   final _amountController = TextEditingController();
+  bool? _receiverExists;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      ref.read(accountUsersProvider.notifier).loadUsers();
+    });
+
+    _receiverController.addListener(_checkReceiver);
+  }
+
+  void _checkReceiver() {
+    final phone = _receiverController.text.trim();
+
+    if (phone.isEmpty) {
+      setState(() {
+        _receiverExists = null;
+      });
+
+      return;
+    }
+
+    final users = ref.read(accountUsersProvider);
+
+    final exists = users.any((user) => user.phoneNumber == phone);
+
+    setState(() {
+      _receiverExists = exists;
+    });
+  }
 
   @override
   void dispose() {
+    _receiverController.removeListener(_checkReceiver);
+
     _receiverController.dispose();
     _amountController.dispose();
 
@@ -36,9 +70,8 @@ class _TransferPageState extends ConsumerState<TransferPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accountUsersProvider);
     final transactionState = ref.watch(transactionProvider);
-
-    final user = ref.watch(userProvider);
 
     final theme = Theme.of(context);
 
@@ -86,7 +119,30 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                   return null;
                 },
               ),
+              if (_receiverExists != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _receiverExists! ? Icons.check_circle : Icons.cancel,
+                        size: 18,
+                        color: _receiverExists! ? Colors.green : Colors.red,
+                      ),
 
+                      const SizedBox(width: 6),
+
+                      Text(
+                        _receiverExists!
+                            ? "Account found"
+                            : "Account does not exist",
+                        style: TextStyle(
+                          color: _receiverExists! ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 20),
 
               CustomTextfield(
@@ -109,7 +165,7 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                     return "Amount is required";
                   }
 
-                  final amount = int.tryParse(value.replaceAll(',', ''));
+                  final amount = int.tryParse(value.replaceAll(",", ""));
 
                   if (amount == null) {
                     return "Enter a valid amount";
@@ -135,25 +191,36 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                       ? null
                       : () async {
                           FocusScope.of(context).unfocus();
+
                           if (!_formKey.currentState!.validate()) {
                             return;
                           }
 
-                          final request = TransferRequest(
-                            phoneNumber: _receiverController.text.trim(),
+                          final receiver = _receiverController.text.trim();
 
+                          if (_receiverExists != true) {
+                            showOverlayPill(
+                              context,
+                              "Receiver account does not exist",
+                            );
+
+                            return;
+                          }
+
+                          final request = TransferRequest(
+                            phoneNumber: receiver,
                             amount: int.parse(
-                              _amountController.text.replaceAll(',', ''),
+                              _amountController.text.replaceAll(",", ""),
                             ),
                           );
 
-                          final errorMessage = await ref
+                          final error = await ref
                               .read(transactionProvider.notifier)
                               .transfer(request);
 
                           if (!mounted) return;
 
-                          if (errorMessage == null) {
+                          if (error == null) {
                             await ref.read(authProvider.notifier).refreshUser();
 
                             await ref
@@ -172,7 +239,7 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                           } else {
                             showOverlayPill(
                               context,
-                              getTransferErrorMessage(errorMessage),
+                              getTransferErrorMessage(error),
                             );
                           }
                         },
@@ -180,9 +247,11 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                   child: transactionState.isLoading
                       ? const SizedBox(
                           height: 22,
+
                           width: 22,
+
                           child: CircularProgressIndicator(
-                            color: AppColors.white,
+                            color: Colors.white,
                             strokeWidth: 2,
                           ),
                         )
@@ -201,24 +270,16 @@ class _TransferPageState extends ConsumerState<TransferPage> {
       return "Transfer failed";
     }
 
-    if (error.contains("RECIPIENT_NOT_FOUND") ||
-        error.contains("Recipient account not found")) {
+    if (error.contains("RECIPIENT_NOT_FOUND")) {
       return "The receiver account does not exist";
     }
 
-    if (error.contains("INSUFFICIENT_FUNDS") ||
-        error.contains("Insufficient funds")) {
+    if (error.contains("INSUFFICIENT_FUNDS")) {
       return "You do not have enough balance";
     }
 
-    if (error.contains("TRANSFER_TO_SELF") ||
-        error.contains("cannot transfer to yourself")) {
+    if (error.contains("TRANSFER_TO_SELF")) {
       return "You cannot transfer money to yourself";
-    }
-
-    if (error.contains("RECIPIENT_REQUIRED") ||
-        error.contains("recipient is required")) {
-      return "Please enter a receiver phone number";
     }
 
     return "Unable to complete transfer. Please try again";

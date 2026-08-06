@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:veegil_pay/core/storage/secure_storage_service.dart';
 
 import '../constants/api_constants.dart';
@@ -6,10 +7,11 @@ import '../utils/app_logger.dart';
 
 class DioClient {
   final SecureStorageService secureStorage;
+  final VoidCallback onLogout;
 
   late final Dio dio;
 
-  DioClient(this.secureStorage) {
+  DioClient(this.secureStorage, this.onLogout) {
     dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
@@ -57,13 +59,19 @@ class DioClient {
           return handler.next(response);
         },
 
-        onError: (error, handler) {
+        onError: (error, handler) async {
           AppLogger.logger.e('''
               ERROR
               ${error.message}
               ${error.requestOptions.uri}
               Response: ${error.response?.data}
             ''');
+
+          if (error.response?.statusCode == 401) {
+            await secureStorage.clear();
+
+            onLogout();
+          }
 
           return handler.next(error);
         },

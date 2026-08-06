@@ -1,24 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:veegil_pay/core/storage/secure_storage_service.dart';
 import 'package:veegil_pay/core/theme/app_colors.dart';
+import 'package:veegil_pay/features/auth/provider/saved_login_provider.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   final SecureStorageService storage = SecureStorageService();
 
   @override
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 2), () {
-      context.go('/loginOrSignup');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(savedLoginProvider.notifier).loadSavedLogin();
+    });
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        context.go('/loginOrSignup');
+      }
     });
   }
 
@@ -30,12 +38,8 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/images/logo-removebg-preview.png',
-              width: 110,
-              // color: Colors.transparent,
-            ),
-            const SizedBox(height: 24),
+            Image.asset('assets/images/nobglogo.png', width: 200),
+
             const Text(
               'VeegilPay',
               style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),

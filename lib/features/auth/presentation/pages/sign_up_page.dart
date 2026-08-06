@@ -34,20 +34,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    // ref.listen(authProvider, (previous, next) {
-    //   next.whenOrNull(
-    //     data: (_) {
-    //       context.go('/dashboard');
-    //     },
-
-    //     error: (error, _) {
-    //       ScaffoldMessenger.of(
-    //         context,
-    //       ).showSnackBar(SnackBar(content: Text(error.toString())));
-    //     },
-    //   );
-    // });
-
     final size = MediaQuery.of(context).size;
 
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
@@ -98,16 +84,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
                         const SizedBox(height: 8),
 
-                        if (!keyboardOpen)
-                          const Text(
-                            "Register to join hassle-free banking.",
+                        const Text(
+                          "Register to join hassle-free banking.",
 
-                            style: TextStyle(
-                              color: Colors.white70,
-
-                              fontSize: 15,
-                            ),
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 15),
+                        ),
                       ],
                     ),
                   ),
