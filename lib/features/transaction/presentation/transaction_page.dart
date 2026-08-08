@@ -23,192 +23,203 @@ class _TransactionHistoryPageState
     "All",
     "Deposit",
     "Withdrawal",
-    "Transfer Received",
-    "Transfer Sent",
+    "Incomimg Transfer",
+    "Outgoing Transfer",
   ];
 
   @override
   Widget build(BuildContext context) {
     final transactions = ref.watch(transactionHistoryProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Transaction History"),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Transaction History"),
 
-        actions: [
-          IconButton(
-            icon: Icon(Icons.analytics_outlined),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.analytics_outlined),
 
-            onPressed: () {
-              context.push("/transaction-overview");
-            },
-          ),
-        ],
-      ),
+              onPressed: () {
+                context.push("/transaction-overview");
+              },
+            ),
+          ],
+        ),
 
-      body: transactions.when(
-        loading: () => const TransactionShimmer(),
+        body: transactions.when(
+          loading: () => const TransactionShimmer(),
 
-        error: (error, stack) => Center(child: Text(error.toString())),
+          error: (error, stack) => Center(child: Text(error.toString())),
 
-        data: (items) {
-          final filtered = filterTransactions(items);
+          data: (items) {
+            final filtered = filterTransactions(items);
 
-          return Column(
-            children: [
-              const SizedBox(height: 12),
+            return Column(
+              children: [
+                const SizedBox(height: 12),
 
-              SizedBox(
-                height: 45,
+                SizedBox(
+                  height: 45,
 
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
 
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
 
-                  itemCount: filters.length,
+                    itemCount: filters.length,
 
-                  itemBuilder: (context, index) {
-                    final filter = filters[index];
+                    itemBuilder: (context, index) {
+                      final filter = filters[index];
 
-                    final selected = selectedFilter == filter;
+                      final selected = selectedFilter == filter;
 
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedFilter = filter;
-                        });
-                      },
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedFilter = filter;
+                          });
+                        },
 
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
 
-                        margin: const EdgeInsets.only(right: 10),
+                          margin: const EdgeInsets.only(right: 10),
 
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
 
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? AppColors.primary
-                              : Colors.grey.shade100,
-
-                          borderRadius: BorderRadius.circular(14),
-
-                          border: Border.all(
+                          decoration: BoxDecoration(
                             color: selected
                                 ? AppColors.primary
-                                : Colors.grey.shade300,
-                          ),
-                        ),
+                                : Colors.grey.shade100,
 
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                            borderRadius: BorderRadius.circular(14),
 
-                          children: [
-                            Icon(
-                              getFilterIcon(filter),
-
-                              size: 16,
-
+                            border: Border.all(
                               color: selected
-                                  ? Colors.white
-                                  : getFilterColor(filter),
+                                  ? AppColors.primary
+                                  : Colors.grey.shade300,
                             ),
+                          ),
 
-                            const SizedBox(width: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
 
-                            Text(
-                              filter,
+                            children: [
+                              Icon(
+                                getFilterIcon(filter),
 
-                              style: TextStyle(
-                                fontSize: 13,
+                                size: 16,
 
-                                fontWeight: FontWeight.w600,
-
-                                color: selected ? Colors.white : Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              Expanded(
-                child: filtered.isEmpty
-                    ? const Center(child: Text("No transactions found"))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-
-                        itemCount: filtered.length,
-
-                        itemBuilder: (context, index) {
-                          final transaction = filtered[index];
-
-                          final isIncoming = transaction.type == "credit";
-
-                          final isTransfer = transaction.counterparty != null;
-
-                          return Card(
-                            elevation: 0,
-
-                            color: Colors.white,
-
-                            margin: const EdgeInsets.only(bottom: 12),
-
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: isIncoming
-                                    ? Colors.green.shade100
-                                    : Colors.red.shade100,
-
-                                child: Icon(
-                                  isTransfer
-                                      ? Icons.swap_horiz
-                                      : isIncoming
-                                      ? Icons.arrow_downward
-                                      : Icons.arrow_upward,
-
-                                  color: isIncoming ? Colors.green : Colors.red,
-                                ),
+                                color: selected
+                                    ? Colors.white
+                                    : getFilterColor(filter),
                               ),
 
-                              title: Text(
-                                getTitle(transaction),
+                              const SizedBox(width: 6),
 
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-
-                              subtitle: Text(
-                                DateFormat.yMMMd().format(transaction.created),
-                              ),
-
-                              trailing: Text(
-                                "${isIncoming ? '+' : '-'}₦${NumberFormat("#,###").format(transaction.amount)}",
+                              Text(
+                                filter,
 
                                 style: TextStyle(
-                                  color: isIncoming ? Colors.green : Colors.red,
+                                  fontSize: 13,
 
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,
+
+                                  color: selected
+                                      ? Colors.white
+                                      : Colors.black87,
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Expanded(
+                  child: filtered.isEmpty
+                      ? const Center(child: Text("No transactions found"))
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+
+                          itemCount: filtered.length,
+
+                          itemBuilder: (context, index) {
+                            final transaction = filtered[index];
+
+                            final isIncoming = transaction.type == "credit";
+
+                            final isTransfer = transaction.counterparty != null;
+
+                            return Card(
+                              elevation: 0,
+
+                              color: Colors.white,
+
+                              margin: const EdgeInsets.only(bottom: 12),
+
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: isIncoming
+                                      ? Colors.green.shade100
+                                      : Colors.red.shade100,
+
+                                  child: Icon(
+                                    isTransfer
+                                        ? Icons.swap_horiz
+                                        : isIncoming
+                                        ? Icons.arrow_downward
+                                        : Icons.arrow_upward,
+
+                                    color: isIncoming
+                                        ? Colors.green
+                                        : Colors.red,
+                                  ),
+                                ),
+
+                                title: Text(
+                                  getTitle(transaction),
+
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+
+                                subtitle: Text(
+                                  DateFormat.yMMMd().format(
+                                    transaction.created,
+                                  ),
+                                ),
+
+                                trailing: Text(
+                                  "${isIncoming ? '+' : '-'}₦${NumberFormat("#,###").format(transaction.amount)}",
+
+                                  style: TextStyle(
+                                    color: isIncoming
+                                        ? Colors.green
+                                        : Colors.red,
+
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

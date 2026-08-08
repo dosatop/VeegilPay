@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:veegil_pay/core/theme/app_colors.dart';
 
 import 'package:veegil_pay/core/utils/text_input_formater.dart';
+import 'package:veegil_pay/core/widgets/confirmation_dialog.dart';
 import 'package:veegil_pay/core/widgets/custom_textfield.dart';
 import 'package:veegil_pay/core/widgets/overlay_pill.dart';
 
@@ -43,10 +45,9 @@ class _TransferPageState extends ConsumerState<TransferPage> {
 
   void _checkReceiver() {
     final phone = _receiverController.text.trim();
+    final currentUser = ref.read(userProvider);
 
     setState(() {});
-
-    final currentUser = ref.read(userProvider);
 
     if (phone.length < 11) {
       setState(() {
@@ -72,6 +73,7 @@ class _TransferPageState extends ConsumerState<TransferPage> {
 
     setState(() {
       _receiverExists = exists;
+      _errorMessage = null;
     });
   }
 
@@ -173,9 +175,11 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                         },
                       ),
 
+                      if (filteredUsers.isNotEmpty && _receiverExists != true)
+                        const SizedBox(height: 10),
                       const SizedBox(height: 10),
 
-                      if (filteredUsers.isNotEmpty)
+                      if (filteredUsers.isNotEmpty && _receiverExists != true)
                         SizedBox(
                           height: 150,
                           child: ListView.builder(
@@ -194,6 +198,7 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                                   setState(() {
                                     _receiverController.text = user.phoneNumber;
                                     _receiverExists = true;
+                                    _errorMessage = null;
                                   });
                                 },
                               );
@@ -204,33 +209,36 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                   );
                 },
               ),
-              CustomTextfield(
-                enabled: !transactionState.isLoading,
-                controller: _amountController,
-                hintText: "Enter amount",
-                iconType: Icons.money,
-                textFieldName: "Amount",
-                textInputType: TextInputType.number,
-                obscureText: false,
-                inputFormatters: [AmountInputFormatter()],
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return "Amount is required";
-                  }
 
-                  final amount = int.tryParse(value.replaceAll(",", ""));
+              const SizedBox(height: 10),
+              if (canTransfer)
+                CustomTextfield(
+                  enabled: !transactionState.isLoading,
+                  controller: _amountController,
+                  hintText: "Enter amount",
+                  iconType: Icons.money,
+                  textFieldName: "Amount",
+                  textInputType: TextInputType.number,
+                  obscureText: false,
+                  inputFormatters: [AmountInputFormatter()],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "Amount is required";
+                    }
 
-                  if (amount == null) {
-                    return "Enter a valid amount";
-                  }
+                    final amount = int.tryParse(value.replaceAll(",", ""));
 
-                  if (amount <= 0) {
-                    return "Amount must be greater than zero";
-                  }
+                    if (amount == null) {
+                      return "Enter a valid amount";
+                    }
 
-                  return null;
-                },
-              ),
+                    if (amount <= 0) {
+                      return "Amount must be greater than zero";
+                    }
+
+                    return null;
+                  },
+                ),
 
               const SizedBox(height: 30),
 
@@ -247,16 +255,37 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                           if (!_formKey.currentState!.validate()) {
                             return;
                           }
+
+                          final receiver = _receiverController.text.trim();
+                          final amount = _amountController.text.replaceAll(
+                            ",",
+                            "",
+                          );
+                          final formattedAmount = _amountController.text.trim();
+
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => ConfirmationDialog(
+                              title: "Confirm Transfer",
+                              message:
+                                  "Are you sure you want to send ₦$formattedAmount to $receiver?",
+                              confirmText: "Send",
+                              cancelText: "Cancel",
+                              confirmColor: AppColors.primary,
+                            ),
+                          );
+                          if (confirmed != true || !mounted) {
+                            return;
+                          }
+
                           setState(() {
                             _errorMessage = null;
                           });
 
-                          final receiver = _receiverController.text.trim();
-
                           final request = TransferRequest(
                             phoneNumber: receiver,
                             amount: int.parse(
-                              _amountController.text.replaceAll(",", ""),
+                             amount,
                             ),
                           );
 

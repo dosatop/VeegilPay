@@ -59,6 +59,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -80,7 +82,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(page.image, height: 300,),
+                        Image.asset(page.image, height: size.height / 2),
                         const SizedBox(height: 40),
                         Text(
                           page.title,
@@ -150,6 +152,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   context.go('/loginOrSignup');
                 }
               },
+              style: TextButton.styleFrom(overlayColor: Colors.transparent),
               child: const Text("Skip"),
             ),
             const SizedBox(height: 20),

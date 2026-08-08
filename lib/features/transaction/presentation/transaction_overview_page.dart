@@ -24,8 +24,8 @@ class _TransactionOverviewPageState
     "All",
     "Deposit",
     "Withdrawal",
-    "Transfer Received",
-    "Transfer Sent",
+    "Incoming Transfer",
+    "Outgoing Transfer",
   ];
 
   List<TransactionModel> filterTransactions(List<TransactionModel> items) {
@@ -186,7 +186,7 @@ class _TransactionOverviewPageState
               Text(
                 selectedDate != null
                     ? DateFormat.yMMMMd().format(selectedDate!)
-                    : "Select date",
+                    : "",
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

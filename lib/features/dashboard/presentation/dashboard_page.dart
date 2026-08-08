@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:veegil_pay/core/network/dio_provider.dart';
 import 'package:veegil_pay/core/theme/app_colors.dart';
 import 'package:veegil_pay/core/widgets/overlay_pill.dart';
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
@@ -70,7 +69,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                             color: AppColors.grey,
                           ),
                         ),
-                    
+
                         const SizedBox(height: 5),
 
                         Text(
@@ -193,14 +192,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     _actionButton(
                       context,
                       Icons.send,
-                      "Send",
+                      "Transfer",
                       () => context.push("/transfer"),
                     ),
 
                     _actionButton(
                       context,
                       Icons.add_circle,
-                      "Fund",
+                      "Deposit",
                       () => context.push('/deposit'),
                     ),
 
@@ -213,7 +212,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
                     _actionButton(
                       context,
-                      Icons.wallet,
+                      Icons.arrow_circle_down_outlined,
                       "Withdraw",
                       () => context.push('/withdraw'),
                     ),
@@ -250,27 +249,38 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 Expanded(
                   child: SizedBox(
                     height: 350,
-                    child: ListView.builder(
-                      itemCount: transactionList.take(5).length,
-                      itemBuilder: (context, index) {
-                        final transaction = transactionList[index];
-
-                        return Column(
-                          children: [
-                            _transactionPreview(
-                              icon: getTransactionIcon(transaction),
-                              title: getTitle(transaction),
-                              date: transaction.created.toString(),
-                              amount: transaction.amount.toString(),
-                              color: getTransactionColor(transaction),
+                    child: transactionList.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "No transactions yet",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
                             ),
+                          )
+                        : ListView.builder(
+                            itemCount: transactionList.take(5).length,
+                            itemBuilder: (context, index) {
+                              final transaction = transactionList[index];
 
-                            if (index != transactionList.take(5).length - 1)
-                              const Divider(),
-                          ],
-                        );
-                      },
-                    ),
+                              return Column(
+                                children: [
+                                  _transactionPreview(
+                                    icon: getTransactionIcon(transaction),
+                                    title: getTitle(transaction),
+                                    date: transaction.created.toString(),
+                                    amount: transaction.amount.toString(),
+                                    color: getTransactionColor(transaction),
+                                  ),
+
+                                  if (index !=
+                                      transactionList.take(5).length - 1)
+                                    const Divider(),
+                                ],
+                              );
+                            },
+                          ),
                   ),
                 ),
               ],
@@ -340,7 +350,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   String getTitle(TransactionModel transaction) {
     if (transaction.type == "credit") {
       if (transaction.counterparty != null) {
-        return "Transfer Received";
+        return "Incoming Transfer";
       }
 
       return "Deposit";
@@ -348,7 +358,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     if (transaction.type == "debit") {
       if (transaction.counterparty != null) {
-        return "Transfer Sent";
+        return "Outgoing Transfer";
       }
 
       return "Withdrawal";
@@ -367,10 +377,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       case "Withdrawal":
         return Icons.remove_circle_outline;
 
-      case "Transfer Received":
+      case "Incoming Transfer":
         return Icons.arrow_downward_rounded;
 
-      case "Transfer Sent":
+      case "Outgoing Transfer":
         return Icons.arrow_upward_rounded;
 
       default:

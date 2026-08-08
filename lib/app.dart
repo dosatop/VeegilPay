@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:veegil_pay/core/theme/app_theme.dart';
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
-import 'package:veegil_pay/features/auth/provider/saved_login_provider.dart';
 import 'router/app_router.dart';
 
 class VeegilPayApp extends ConsumerStatefulWidget {

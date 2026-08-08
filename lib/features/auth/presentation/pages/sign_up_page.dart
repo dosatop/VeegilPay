@@ -41,310 +41,318 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
 
-      body: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          child: Column(
-            children: [
-              Stack(
-                children: [
-                  ClipPath(
-                    clipper: WaveClipperOne(),
+      body: PopScope(
+        canPop: false,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            child: Column(
+              children: [
+                Stack(
+                  children: [
+                    ClipPath(
+                      clipper: WaveClipperOne(),
 
-                    child: Container(
-                      height: keyboardOpen
-                          ? size.height * .15
-                          : size.height * .25,
+                      child: Container(
+                        height: keyboardOpen
+                            ? size.height * .15
+                            : size.height * .25,
 
-                      color: const Color(0xFF091993),
-                    ),
-                  ),
-
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: size.width * .1,
-
-                      top: size.height * .04,
+                        color: const Color(0xFF091993),
+                      ),
                     ),
 
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Padding(
+                      padding: EdgeInsets.only(
+                        left: size.width * .1,
 
-                      children: [
-                        Text(
-                          "Sign Up",
-
-                          style: TextStyle(
-                            color: Colors.white,
-
-                            fontSize: size.width * .10,
-
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        const Text(
-                          "Register to join hassle-free banking.",
-
-                          style: TextStyle(color: Colors.white70, fontSize: 15),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 50),
-
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: size.width * .08),
-
-                child: Form(
-                  key: _formKey,
-
-                  child: Column(
-                    children: [
-                      CustomTextfield(
-                        enabled: !authState.isLoading,
-                        controller: _phoneController,
-
-                        hintText: "Phone Number",
-
-                        iconType: Icons.phone_android,
-
-                        textFieldName: "Phone Number",
-
-                        textInputType: TextInputType.phone,
-
-                        obscureText: false,
-
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Phone number required";
-                          }
-
-                          if (value.length < 11) {
-                            return "Enter valid phone number";
-                          }
-
-                          return null;
-                        },
+                        top: size.height * .04,
                       ),
 
-                      const SizedBox(height: 10),
-
-                      CustomTextfield(
-                        enabled: !authState.isLoading,
-                        controller: _passwordController,
-
-                        hintText: "Password",
-
-                        iconType: Icons.lock_outline,
-
-                        textFieldName: "Password",
-
-                        obscureText: true,
-
-                        showPasswordToggle: !authState.isLoading,
-                        forceObscure: authState.isLoading,
-
-                        textInputType: TextInputType.visiblePassword,
-
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Password required";
-                          }
-
-                          if (value.length < 8) {
-                            return "Minimum 8 characters";
-                          }
-
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      CustomTextfield(
-                        enabled: !authState.isLoading,
-                        controller: _confirmPasswordController,
-
-                        hintText: "Confirm Password",
-
-                        iconType: Icons.lock_outline,
-
-                        textFieldName: "Confirm Password",
-                        showPasswordToggle: !authState.isLoading,
-                        forceObscure: authState.isLoading,
-
-                        obscureText: true,
-
-                        textInputType: TextInputType.visiblePassword,
-
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return "You need to confirm your password";
-                          }
-
-                          if (value != _passwordController.text) {
-                            return "Passwords do not match";
-                          }
-
-                          return null;
-                        },
-                      ),
-
-                      SizedBox(
-                        height: 35,
-                        child: Center(
-                          child: _errorMessage != null
-                              ? Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.cancel,
-                                      size: 18,
-                                      color: Colors.red,
-                                    ),
-
-                                    const SizedBox(width: 6),
-
-                                    Flexible(
-                                      child: Text(
-                                        _errorMessage!,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : null,
-                        ),
-                      ),
-
-                      SizedBox(
-                        width: double.infinity,
-
-                        height: 50,
-
-                        child: ElevatedButton(
-                          onPressed: authState.isLoading
-                              ? null
-                              : () async {
-                                  FocusScope.of(context).unfocus();
-
-                                  if (!_formKey.currentState!.validate()) {
-                                    return;
-                                  }
-
-                                  setState(() {
-                                    _errorMessage = null;
-                                  });
-
-                                  final request = SignupRequest(
-                                    phoneNumber: _phoneController.text.trim(),
-                                    password: _passwordController.text.trim(),
-                                  );
-
-                                  final error = await ref
-                                      .read(authProvider.notifier)
-                                      .signup(request);
-
-                                  final storage = ref.read(
-                                    secureStorageProvider,
-                                  );
-
-                                  if (error == null) {
-                                    await storage.saveLoginInfo(
-                                      LoginInfo(
-                                        phoneNumber: request.phoneNumber,
-                                      ),
-                                    );
-
-                                    await ref
-                                        .read(savedLoginProvider.notifier)
-                                        .loadSavedLogin();
-
-                                    _phoneController.clear();
-                                    _passwordController.clear();
-                                    _confirmPasswordController.clear();
-
-                                    if (!mounted) return;
-
-                                    context.go('/dashboard');
-                                  } else {
-                                    await storage.clearLoginInfo();
-
-                                    if (!mounted) return;
-
-                                    setState(() {
-                                      _errorMessage = getSignupErrorMessage(
-                                        error,
-                                      );
-                                    });
-                                  }
-                                },
-
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF091993),
-
-                            foregroundColor: Colors.white,
-                          ),
-
-                          child: authState.isLoading
-                              ? const SizedBox(
-                                  height: 22,
-
-                                  width: 22,
-
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.white,
-
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text("Create Account"),
-                        ),
-                      ),
-
-                      SizedBox(height: size.height * 0.1),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
 
                         children: [
-                          const Text("Already have an account?"),
+                          Text(
+                            "Sign Up",
 
-                          TextButton(
-                            onPressed: () {
-                              if (!authState.isLoading) {
-                                widget.onTogglePage?.call();
-                              }
-                            },
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.only(left: size.width * 0.01),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            style: TextStyle(
+                              color: Colors.white,
+
+                              fontSize: size.width * .10,
+
+                              fontWeight: FontWeight.bold,
                             ),
+                          ),
 
-                            child: const Text(
-                              "Log in",
-                              style: TextStyle(color: Color(0xFF091993)),
+                          const SizedBox(height: 8),
+
+                          const Text(
+                            "Register to join hassle-free banking.",
+
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 15,
                             ),
                           ),
                         ],
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 50),
+
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: size.width * .08),
+
+                  child: Form(
+                    key: _formKey,
+
+                    child: Column(
+                      children: [
+                        CustomTextfield(
+                          enabled: !authState.isLoading,
+                          controller: _phoneController,
+
+                          hintText: "Phone Number",
+
+                          iconType: Icons.phone_android,
+
+                          textFieldName: "Phone Number",
+
+                          textInputType: TextInputType.phone,
+
+                          obscureText: false,
+
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Phone number required";
+                            }
+
+                            if (value.length < 11) {
+                              return "Enter valid phone number";
+                            }
+
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        CustomTextfield(
+                          enabled: !authState.isLoading,
+                          controller: _passwordController,
+
+                          hintText: "Password",
+
+                          iconType: Icons.lock_outline,
+
+                          textFieldName: "Password",
+
+                          obscureText: true,
+
+                          showPasswordToggle: !authState.isLoading,
+                          forceObscure: authState.isLoading,
+
+                          textInputType: TextInputType.visiblePassword,
+
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Password required";
+                            }
+
+                            if (value.length < 8) {
+                              return "Minimum 8 characters";
+                            }
+
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        CustomTextfield(
+                          enabled: !authState.isLoading,
+                          controller: _confirmPasswordController,
+
+                          hintText: "Confirm Password",
+
+                          iconType: Icons.lock_outline,
+
+                          textFieldName: "Confirm Password",
+                          showPasswordToggle: !authState.isLoading,
+                          forceObscure: authState.isLoading,
+
+                          obscureText: true,
+
+                          textInputType: TextInputType.visiblePassword,
+
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return "You need to confirm your password";
+                            }
+
+                            if (value != _passwordController.text) {
+                              return "Passwords do not match";
+                            }
+
+                            return null;
+                          },
+                        ),
+
+                        SizedBox(
+                          height: 35,
+                          child: Center(
+                            child: _errorMessage != null
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.cancel,
+                                        size: 18,
+                                        color: Colors.red,
+                                      ),
+
+                                      const SizedBox(width: 6),
+
+                                      Flexible(
+                                        child: Text(
+                                          _errorMessage!,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : null,
+                          ),
+                        ),
+
+                        SizedBox(
+                          width: double.infinity,
+
+                          height: 50,
+
+                          child: ElevatedButton(
+                            onPressed: authState.isLoading
+                                ? null
+                                : () async {
+                                    FocusScope.of(context).unfocus();
+
+                                    if (!_formKey.currentState!.validate()) {
+                                      return;
+                                    }
+
+                                    setState(() {
+                                      _errorMessage = null;
+                                    });
+
+                                    final request = SignupRequest(
+                                      phoneNumber: _phoneController.text.trim(),
+                                      password: _passwordController.text.trim(),
+                                    );
+
+                                    final error = await ref
+                                        .read(authProvider.notifier)
+                                        .signup(request);
+
+                                    final storage = ref.read(
+                                      secureStorageProvider,
+                                    );
+
+                                    if (error == null) {
+                                      await storage.saveLoginInfo(
+                                        LoginInfo(
+                                          phoneNumber: request.phoneNumber,
+                                        ),
+                                      );
+
+                                      await ref
+                                          .read(savedLoginProvider.notifier)
+                                          .loadSavedLogin();
+
+                                      _phoneController.clear();
+                                      _passwordController.clear();
+                                      _confirmPasswordController.clear();
+
+                                      if (!mounted) return;
+
+                                      context.go('/dashboard');
+                                    } else {
+                                      await storage.clearLoginInfo();
+
+                                      if (!mounted) return;
+
+                                      setState(() {
+                                        _errorMessage = getSignupErrorMessage(
+                                          error,
+                                        );
+                                      });
+                                    }
+                                  },
+
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF091993),
+
+                              foregroundColor: Colors.white,
+                            ),
+
+                            child: authState.isLoading
+                                ? const SizedBox(
+                                    height: 22,
+
+                                    width: 22,
+
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.white,
+
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text("Create Account"),
+                          ),
+                        ),
+
+                        SizedBox(height: size.height * 0.1),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+
+                          children: [
+                            const Text("Already have an account?"),
+
+                            TextButton(
+                              onPressed: () {
+                                if (!authState.isLoading) {
+                                  widget.onTogglePage?.call();
+                                }
+                              },
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.only(
+                                  left: size.width * 0.01,
+                                ),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+
+                              child: const Text(
+                                "Log in",
+                                style: TextStyle(color: Color(0xFF091993)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

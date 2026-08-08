@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:veegil_pay/core/theme/app_colors.dart';
 import 'package:veegil_pay/core/utils/text_input_formater.dart';
+import 'package:veegil_pay/core/widgets/confirmation_dialog.dart';
 import 'package:veegil_pay/core/widgets/custom_textfield.dart';
 import 'package:veegil_pay/core/widgets/overlay_pill.dart';
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
@@ -136,12 +137,30 @@ class _WithdrawPageState extends ConsumerState<WithdrawPage> {
                             return;
                           }
 
+                          final amount = _amountController.text.replaceAll(
+                            ',',
+                            '',
+                          );
+                          final formattedAmount = _amountController.text.trim();
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => ConfirmationDialog(
+                              title: "Confirm Withdrawal",
+                              message:
+                                  "Are you sure you want to withdraw ₦$formattedAmount from your account?",
+                              confirmText: "Withdraw",
+                              cancelText: "Cancel",
+                              confirmColor: Colors.red,
+                            ),
+                          );
+                          if (confirmed != true || !mounted) {
+                            return;
+                          }
+
                           final request = WithdrawRequest(
                             phoneNumber: user!.phoneNumber,
 
-                            amount: int.parse(
-                              _amountController.text.replaceAll(',', ''),
-                            ),
+                            amount: int.parse(amount),
                           );
 
                           final success = await ref

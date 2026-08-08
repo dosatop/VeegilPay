@@ -37,14 +37,14 @@ class MoneyOverviewChart extends StatelessWidget {
       ),
 
       ChartData(
-        "Transfer Received",
+        "Incoming Transfer",
         transferReceived,
         Colors.blue,
         Icons.arrow_downward_rounded,
       ),
 
       ChartData(
-        "Transfer Sent",
+        "Outgoing Transfer",
         transferSent,
         Colors.orange,
         Icons.arrow_upward_rounded,
@@ -97,66 +97,124 @@ class MoneyOverviewChart extends StatelessWidget {
 
           const SizedBox(height: 15),
 
-          SizedBox(
-            height: 220,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                flex: 5,
+                child: SizedBox(
+                  height: 220,
+                  child: SfCircularChart(
+                    margin: EdgeInsets.zero,
 
-            child: SfCircularChart(
-              margin: EdgeInsets.zero,
+                    tooltipBehavior: TooltipBehavior(enable: true),
 
-              tooltipBehavior: TooltipBehavior(enable: true),
+                    series: <CircularSeries>[
+                      DoughnutSeries<ChartData, String>(
+                        dataSource: data,
 
-              series: <CircularSeries>[
-                DoughnutSeries<ChartData, String>(
-                  dataSource: data,
+                        xValueMapper: (item, _) => item.name,
 
-                  xValueMapper: (item, _) => item.name,
+                        yValueMapper: (item, _) => item.amount,
 
-                  yValueMapper: (item, _) => item.amount,
+                        pointColorMapper: (item, _) => item.color,
 
-                  pointColorMapper: (item, _) => item.color,
+                        radius: "80%",
 
-                  radius: "75%",
+                        innerRadius: "68%",
 
-                  innerRadius: "68%",
+                        explode: false,
 
-                  explode: false,
+                        strokeColor: Colors.white,
 
-                  strokeColor: Colors.white,
+                        strokeWidth: 3,
 
-                  strokeWidth: 3,
-
-                  animationDuration: 800,
-                ),
-              ],
-
-              annotations: [
-                CircularChartAnnotation(
-                  widget: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-
-                    children: [
-                      const Text(
-                        "Net Flow",
-
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        animationDuration: 800,
                       ),
+                    ],
 
-                      Text(
-                        "${netFlow >= 0 ? '+' : '-'}₦${formatter.format(netFlow.abs())}",
+                    annotations: [
+                      CircularChartAnnotation(
+                        widget: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "Net Flow",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 11,
+                              ),
+                            ),
 
-                        style: TextStyle(
-                          fontSize: 17,
+                            const SizedBox(height: 3),
 
-                          fontWeight: FontWeight.bold,
-
-                          color: netFlow >= 0 ? Colors.green : Colors.red,
+                            Text(
+                              "${netFlow >= 0 ? '+' : '-'}₦${formatter.format(netFlow.abs())}",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: netFlow >= 0 ? Colors.green : Colors.red,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                flex: 5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: data.map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: item.color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          Expanded(
+                            child: Text(
+                              item.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 5),
+
+                          Text(
+                            "₦${formatter.format(item.amount)}",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: item.color,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 10),
@@ -185,51 +243,6 @@ class MoneyOverviewChart extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-
-          const SizedBox(height: 15),
-
-          Wrap(
-            spacing: 10,
-
-            runSpacing: 10,
-
-            children: data.map((item) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-
-                decoration: BoxDecoration(
-                  color: item.color.withValues(alpha: .12),
-
-                  borderRadius: BorderRadius.circular(20),
-                ),
-
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-
-                  children: [
-                    Icon(item.icon, size: 15, color: item.color),
-
-                    const SizedBox(width: 5),
-
-                    Text(
-                      item.name,
-
-                      style: TextStyle(
-                        fontSize: 12,
-
-                        color: item.color,
-
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
           ),
         ],
       ),
