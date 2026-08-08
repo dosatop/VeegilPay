@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:veegil_pay/core/errors/app_exception.dart';
 import 'package:veegil_pay/core/network/dio_provider.dart';
 import 'package:veegil_pay/features/deposit/model/deposit_request.dart';
 import 'package:veegil_pay/features/transfer/models/transfer_request.dart';
@@ -65,16 +66,12 @@ class TransactionNotifier extends AsyncNotifier<void> {
       state = const AsyncData(null);
 
       return null;
-    } catch (e, stackTrace) {
+    } on AppException catch (e, stackTrace) {
       state = AsyncError(e, stackTrace);
 
-      if (e is DioException) {
-        final data = e.response?.data;
-
-        if (data is Map) {
-          return data["code"]?.toString() ?? "TRANSFER_FAILED";
-        }
-      }
+      return e.code;
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
 
       return "TRANSFER_FAILED";
     }

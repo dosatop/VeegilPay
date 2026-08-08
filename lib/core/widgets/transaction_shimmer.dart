@@ -31,7 +31,6 @@ class TransactionShimmer extends StatelessWidget {
         child: Column(
           children: [
 
-            // FILTERS
             SizedBox(
               height: 45,
               child: ListView.builder(
@@ -55,8 +54,7 @@ class TransactionShimmer extends StatelessWidget {
             const SizedBox(height: 15),
 
 
-            // CHART PLACEHOLDER
-            box(
+               box(
               height: 180,
               width: double.infinity,
               radius: 16,
@@ -66,8 +64,7 @@ class TransactionShimmer extends StatelessWidget {
             const SizedBox(height: 20),
 
 
-            // TRANSACTION CARDS
-            Expanded(
+                   Expanded(
               child: ListView.builder(
                 itemCount: 6,
 

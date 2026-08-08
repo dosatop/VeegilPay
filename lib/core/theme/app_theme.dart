@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:veegil_pay/core/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static final lightTheme = ThemeData(
@@ -47,26 +48,21 @@ class AppTheme {
 
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(
-          color: AppColors.primary,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: AppColors.primary, width: 2),
       ),
     ),
 
-    textTheme: const TextTheme(
-      headlineSmall: TextStyle(
-        color: AppColors.black,
-        fontWeight: FontWeight.bold,
-      ),
-
-      titleLarge: TextStyle(
-        color: AppColors.black,
-        fontWeight: FontWeight.bold,
-      ),
-
-      bodyMedium: TextStyle(
-        color: Colors.black87,
+    textTheme: GoogleFonts.interTextTheme(
+      const TextTheme(
+        headlineSmall: TextStyle(
+          color: AppColors.black,
+          fontWeight: FontWeight.bold,
+        ),
+        titleLarge: TextStyle(
+          color: AppColors.black,
+          fontWeight: FontWeight.bold,
+        ),
+        bodyMedium: TextStyle(color: Colors.black87),
       ),
     ),
 
@@ -81,7 +77,6 @@ class AppTheme {
       ),
     ),
   );
-
 
   static final darkTheme = ThemeData(
     brightness: Brightness.dark,
@@ -116,9 +111,7 @@ class AppTheme {
       filled: true,
       fillColor: const Color(0xff1E1E1E),
 
-      hintStyle: const TextStyle(
-        color: Colors.white54,
-      ),
+      hintStyle: const TextStyle(color: Colors.white54),
 
       border: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -132,10 +125,7 @@ class AppTheme {
 
       focusedBorder: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(
-          color: AppColors.secondary,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: AppColors.secondary, width: 2),
       ),
     ),
 
@@ -145,14 +135,9 @@ class AppTheme {
         fontWeight: FontWeight.bold,
       ),
 
-      titleLarge: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-      ),
+      titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
 
-      bodyMedium: TextStyle(
-        color: Colors.white70,
-      ),
+      bodyMedium: TextStyle(color: Colors.white70),
     ),
 
     elevatedButtonTheme: ElevatedButtonThemeData(

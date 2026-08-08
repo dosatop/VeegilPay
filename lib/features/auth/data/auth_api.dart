@@ -22,7 +22,7 @@ class AuthApi {
 
       return LogInResponse.fromJson(response.data);
     } on DioException catch (error) {
-      throw AppException(ApiErrorHandler.getMessage(error));
+      throw AppException(ApiErrorHandler.getCode(error));
     }
   }
 
@@ -35,7 +35,7 @@ class AuthApi {
 
       return LogInResponse.fromJson(response.data);
     } on DioException catch (error) {
-      throw AppException(ApiErrorHandler.getMessage(error));
+      throw AppException(ApiErrorHandler.getCode(error));
     }
   }
 
@@ -45,7 +45,7 @@ class AuthApi {
 
       return UserResponse.fromJson(response.data);
     } on DioException catch (error) {
-      throw AppException(ApiErrorHandler.getMessage(error));
+      throw AppException(ApiErrorHandler.getCode(error));
     }
   }
 }

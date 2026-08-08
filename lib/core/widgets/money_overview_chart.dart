@@ -51,27 +51,8 @@ class MoneyOverviewChart extends StatelessWidget {
       ),
     ].where((e) => e.amount > 0).toList();
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-
-      padding: const EdgeInsets.all(18),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
-
-        borderRadius: BorderRadius.circular(24),
-
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .06),
-
-            blurRadius: 20,
-
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
 
@@ -138,10 +119,8 @@ class MoneyOverviewChart extends StatelessWidget {
 
                   innerRadius: "68%",
 
-                  // keeps slices perfectly round
                   explode: false,
 
-                  // clean separation
                   strokeColor: Colors.white,
 
                   strokeWidth: 3,
@@ -219,7 +198,6 @@ class MoneyOverviewChart extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
-
                   vertical: 8,
                 ),
 

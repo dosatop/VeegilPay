@@ -67,7 +67,21 @@ class DioClient {
               Response: ${error.response?.data}
             ''');
 
-          if (error.response?.statusCode == 401) {
+          if (error.type == DioExceptionType.connectionError ||
+              error.type == DioExceptionType.connectionTimeout ||
+              error.type == DioExceptionType.receiveTimeout) {
+            return handler.reject(
+              DioException(
+                requestOptions: error.requestOptions,
+                type: error.type,
+                error: "NETWORK_ERROR",
+                message: "No internet connection",
+              ),
+            );
+          }
+
+          if (error.response?.statusCode == 401 &&
+              !error.requestOptions.path.contains('/auth/login')) {
             await secureStorage.clear();
 
             onLogout();

@@ -1,17 +1,44 @@
-# veegil_pay
+# Veegil Pay Mobile Banking App
 
-A new Flutter project.
+## Developer
 
-## Getting Started
+ADENUSI JOSEPHAYOMIKUN
 
-This project is a starting point for a Flutter application.
+## Project Description
 
-A few resources to get you started if this is your first Flutter project:
+Veegil Pay is a Flutter mobile banking application built as part of the Veegil Technologies Mobile Developer Assessment.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+The application consumes the Veegil Bank REST API and implements JWT-based authentication, secure token storage, account management, money transfers, deposits, withdrawals, and transaction history visualization.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The app follows a clean architecture feature-first approach and uses Riverpod for state management.
+
+## Features
+
+- User signup
+- User login with JWT authentication
+- Secure JWT token storage
+- Automatic Bearer token injection for protected API requests
+- View account information and balance
+- Deposit money
+- Withdraw money
+- Transfer money to registered users
+- User directory lookup
+- Transaction history
+- Deposit and withdrawal visualization chart
+- Transaction filtering
+- Loading states and API error handling
+- Token expiration handling
+
+## Technologies Used
+
+- Flutter
+- Dart
+- Riverpod
+- Dio
+- GoRouter
+- Flutter Secure Storage
+- FL Chart
+
+## Architecture
+
+The project uses a clean architecture feature-first structure:

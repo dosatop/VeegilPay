@@ -27,7 +27,7 @@ class TransactionApi {
       );
     } on DioException catch (e) {
       throw AppException(
-        ApiErrorHandler.getMessage(e),
+        ApiErrorHandler.getCode(e),
       );
     }
   }
@@ -49,7 +49,7 @@ class TransactionApi {
       );
     } on DioException catch (e) {
       throw AppException(
-        ApiErrorHandler.getMessage(e),
+        ApiErrorHandler.getCode(e),
       );
     }
   }
@@ -71,7 +71,7 @@ class TransactionApi {
       );
     } on DioException catch (e) {
       throw AppException(
-        ApiErrorHandler.getMessage(e),
+        ApiErrorHandler.getCode(e),
       );
     }
   }
@@ -84,7 +84,7 @@ class TransactionApi {
       return response.data['data'];
     } on DioException catch (e) {
       throw AppException(
-        ApiErrorHandler.getMessage(e),
+        ApiErrorHandler.getCode(e),
       );
     }
   }

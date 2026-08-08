@@ -13,7 +13,6 @@ class AmountInputFormatter extends TextInputFormatter {
       return newValue;
     }
 
-    // Remove existing commas
     final cleanText = newValue.text.replaceAll(',', '');
 
     final number = int.tryParse(cleanText);

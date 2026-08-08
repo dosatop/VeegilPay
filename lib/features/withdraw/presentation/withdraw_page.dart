@@ -23,6 +23,7 @@ class _WithdrawPageState extends ConsumerState<WithdrawPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _amountController = TextEditingController();
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -59,9 +60,35 @@ class _WithdrawPageState extends ConsumerState<WithdrawPage> {
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 5),
+              SizedBox(
+                height: 35,
+                child: Center(
+                  child: _errorMessage != null
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.cancel,
+                              size: 18,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
+              ),
 
               CustomTextfield(
+                enabled: !transactionState.isLoading,
                 controller: _amountController,
                 hintText: "Enter amount",
                 iconType: Icons.money,
@@ -102,6 +129,9 @@ class _WithdrawPageState extends ConsumerState<WithdrawPage> {
                       : () async {
                           FocusScope.of(context).unfocus();
 
+                          setState(() {
+                            _errorMessage = null;
+                          });
                           if (!_formKey.currentState!.validate()) {
                             return;
                           }
@@ -134,15 +164,13 @@ class _WithdrawPageState extends ConsumerState<WithdrawPage> {
 
                             context.pop();
                           } else {
-                            final errorMessage = ref
-                                .read(transactionProvider)
-                                .error;
+                            final error = ref.read(transactionProvider).error;
 
-                            showOverlayPill(
-                              context,
-                              errorMessage?.toString() ??
-                                  "Something went wrong",
-                            );
+                            setState(() {
+                              _errorMessage = getWithdrawErrorMessage(
+                                error.toString(),
+                              );
+                            });
                           }
                         },
 
@@ -156,5 +184,28 @@ class _WithdrawPageState extends ConsumerState<WithdrawPage> {
         ),
       ),
     );
+  }
+
+  String getWithdrawErrorMessage(String code) {
+    switch (code) {
+      case "NETWORK_ERROR":
+      case "NO_CONNECTION":
+        return "No internet connection. Please check your network";
+
+      case "INSUFFICIENT_FUNDS":
+        return "You do not have enough balance";
+
+      case "AMOUNT_TOO_LARGE":
+        return "The amount is too large";
+
+      case "AMOUNT_TOO_SMALL":
+        return "The amount is below the minimum limit";
+
+      case "ACCOUNT_NOT_FOUND":
+        return "Account not found";
+
+      default:
+        return "Unable to complete withdrawal. Please try again";
+    }
   }
 }

@@ -49,6 +49,37 @@ class SecureStorageService {
   }
 
   Future<void> clear() async {
+    final balanceVisibility = await getBalanceVisibility();
+
     await _storage.deleteAll();
+
+    if (balanceVisibility != null) {
+      await saveBalanceVisibility(balanceVisibility);
+    }
+  }
+
+  Future<void> saveBalanceVisibility(bool value) async {
+    await _storage.write(key: "balance_visibility", value: value.toString());
+  }
+
+  Future<bool?> getBalanceVisibility() async {
+    final value = await _storage.read(key: "balance_visibility");
+
+    if (value == null) return null;
+
+    return value == "true";
+  }
+
+  Future saveOnboardingSeen() async {
+    await _storage.write(key: "hasSeenOnboarding", value: "true");
+
+     await _storage.read(key: "hasSeenOnboarding");
+
+  }
+
+  Future<bool> hasSeenOnboarding() async {
+    final value = await _storage.read(key: "hasSeenOnboarding");
+
+    return value == "true";
   }
 }

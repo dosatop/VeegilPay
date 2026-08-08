@@ -13,17 +13,18 @@ class SavedLoginNotifier extends Notifier<SavedLoginState> {
 
     final loginInfo = await storage.getLoginInfo();
 
-    if (loginInfo != null) {
-      state = state.copyWith(phoneNumber: loginInfo.phoneNumber);
-    }
+    state = state.copyWith(
+      phoneNumber: loginInfo?.phoneNumber,
+      isLoading: false,
+    );
   }
 
-  void clearSavedLogin() async {
+  Future<void> clearSavedLogin() async {
     final storage = ref.read(secureStorageProvider);
 
     await storage.clearLoginInfo();
 
-    state = const SavedLoginState(phoneNumber: null);
+    state = const SavedLoginState(phoneNumber: null, isLoading: false);
   }
 }
 

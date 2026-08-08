@@ -43,6 +43,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
       body: SafeArea(
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             children: [
               Stack(
@@ -106,6 +107,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                   child: Column(
                     children: [
                       CustomTextfield(
+                        enabled: !authState.isLoading,
                         controller: _phoneController,
 
                         hintText: "Phone Number",
@@ -134,6 +136,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       const SizedBox(height: 10),
 
                       CustomTextfield(
+                        enabled: !authState.isLoading,
                         controller: _passwordController,
 
                         hintText: "Password",
@@ -144,7 +147,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
                         obscureText: true,
 
-                        showPasswordToggle: true,
+                        showPasswordToggle: !authState.isLoading,
+                        forceObscure: authState.isLoading,
+
                         textInputType: TextInputType.visiblePassword,
 
                         validator: (value) {
@@ -163,6 +168,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       const SizedBox(height: 10),
 
                       CustomTextfield(
+                        enabled: !authState.isLoading,
                         controller: _confirmPasswordController,
 
                         hintText: "Confirm Password",
@@ -170,7 +176,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         iconType: Icons.lock_outline,
 
                         textFieldName: "Confirm Password",
-                        showPasswordToggle: true,
+                        showPasswordToggle: !authState.isLoading,
+                        forceObscure: authState.isLoading,
 
                         obscureText: true,
 
@@ -189,19 +196,36 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         },
                       ),
 
-                      const SizedBox(height: 10),
                       SizedBox(
-                        height: 25,
-                        child: _errorMessage == null
-                            ? null
-                            : Text(
-                                _errorMessage!,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 14,
-                                ),
-                              ),
+                        height: 35,
+                        child: Center(
+                          child: _errorMessage != null
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.cancel,
+                                      size: 18,
+                                      color: Colors.red,
+                                    ),
+
+                                    const SizedBox(width: 6),
+
+                                    Flexible(
+                                      child: Text(
+                                        _errorMessage!,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : null,
+                        ),
                       ),
 
                       SizedBox(
@@ -228,7 +252,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                                     password: _passwordController.text.trim(),
                                   );
 
-                                  final success = await ref
+                                  final error = await ref
                                       .read(authProvider.notifier)
                                       .signup(request);
 
@@ -236,7 +260,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                                     secureStorageProvider,
                                   );
 
-                                  if (success) {
+                                  if (error == null) {
                                     await storage.saveLoginInfo(
                                       LoginInfo(
                                         phoneNumber: request.phoneNumber,
@@ -259,14 +283,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
                                     if (!mounted) return;
 
-                                    final errorMessage = ref
-                                        .read(authProvider)
-                                        .error;
-
                                     setState(() {
-                                      _errorMessage =
-                                          errorMessage?.toString() ??
-                                          "Signup failed";
+                                      _errorMessage = getSignupErrorMessage(
+                                        error,
+                                      );
                                     });
                                   }
                                 },
@@ -329,5 +349,32 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
         ),
       ),
     );
+  }
+
+  String getSignupErrorMessage(String? code) {
+    switch (code) {
+      case "NETWORK_ERROR":
+      case "NO_CONNECTION":
+        return "No internet connection. Please check your network";
+
+      case "PHONE_NUMBER_ALREADY_EXISTS":
+      case "PHONE_TAKEN":
+        return "Phone number is already registered";
+
+      case "WEAK_PASSWORD":
+        return "Password is too weak";
+
+      case "PASSWORD_INVALID":
+        return "Password must be at least 8 characters";
+
+      case "INVALID_PHONE_NUMBER":
+        return "Invalid phone number";
+
+      case "VALIDATION_ERROR":
+        return "Please check your details";
+
+      default:
+        return "Unable to create account. Please try again";
+    }
   }
 }

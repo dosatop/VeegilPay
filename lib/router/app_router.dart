@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:veegil_pay/features/auth/presentation/pages/log_in_or_sign_up.dart';
 import 'package:veegil_pay/features/auth/presentation/pages/login_page.dart';
+import 'package:veegil_pay/features/auth/presentation/pages/onboarding_page.dart';
 import 'package:veegil_pay/features/auth/presentation/pages/sign_up_page.dart';
 import 'package:veegil_pay/features/auth/presentation/pages/splash_screen.dart';
 import 'package:veegil_pay/features/bills/presentation/bills_page.dart';
@@ -11,126 +12,145 @@ import 'package:veegil_pay/features/dashboard/presentation/dashboard_page.dart';
 import 'package:veegil_pay/features/deposit/presentation/deposit_page.dart';
 import 'package:veegil_pay/features/navigation/main_navigation.dart';
 import 'package:veegil_pay/features/profile/presentation/profile_page.dart';
+import 'package:veegil_pay/features/transaction/presentation/transaction_overview_page.dart';
 import 'package:veegil_pay/features/transaction/presentation/transaction_page.dart';
 import 'package:veegil_pay/features/transfer/presentation/transfer_page.dart';
 import 'package:veegil_pay/features/withdraw/presentation/withdraw_page.dart';
+import 'package:veegil_pay/router/navigatior_observerd.dart';
 
-final GoRouter appRouter = GoRouter(
-  initialLocation: '/',
+GoRouter appRouter(bool hasSeenOnboarding) {
+  return GoRouter(
+    initialLocation: hasSeenOnboarding ? '/loginOrSignup' : '/',
 
-  routes: [
-    GoRoute(
-      path: '/',
-      name: 'splash',
-      builder: (context, state) {
-        return const SplashScreen();
-      },
-    ),
+    observers: [MyNavigatorObserver()],
 
-    GoRoute(
-      path: '/login',
-      name: 'login',
-      builder: (context, state) {
-        return const LoginPage();
-      },
-    ),
+    routes: [
+      GoRoute(
+        path: '/',
+        name: 'splash',
+        builder: (context, state) {
+          return const SplashScreen();
+        },
+      ),
 
-    GoRoute(
-      path: '/signup',
-      name: 'signup',
-      builder: (context, state) {
-        return const SignUpPage();
-      },
-    ),
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        builder: (context, state) {
+          return const OnboardingPage();
+        },
+      ),
 
-    GoRoute(
-      path: '/loginOrSignup',
-      name: 'loginOrSignup',
-      builder: (context, state) {
-        return const LogInOrSignUp();
-      },
-    ),
+      GoRoute(
+        path: '/login',
+        name: 'login',
+        builder: (context, state) {
+          return const LoginPage();
+        },
+      ),
 
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) {
-        return MainNavigation(navigationShell: navigationShell);
-      },
+      GoRoute(
+        path: '/signup',
+        name: 'signup',
+        builder: (context, state) {
+          return const SignUpPage();
+        },
+      ),
 
-      branches: [
-        // HOME
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/dashboard',
-              name: 'dashboard',
+      GoRoute(
+        path: '/loginOrSignup',
+        name: 'loginOrSignup',
+        builder: (context, state) {
+          return const LogInOrSignUp();
+        },
+      ),
 
-              builder: (context, state) {
-                return const DashboardPage();
-              },
-            ),
-          ],
-        ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainNavigation(navigationShell: navigationShell);
+        },
 
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/transactions',
-              name: 'transactions',
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/dashboard',
+                name: 'dashboard',
 
-              builder: (context, state) {
-                return const TransactionHistoryPage();
-              },
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/profile',
-              name: 'profile',
-              builder: (context, state) {
-                return const ProfilePage();
-              },
-            ),
-          ],
-        ),
-     
-      ],
-    ),
+                builder: (context, state) {
+                  return const DashboardPage();
+                },
+              ),
+            ],
+          ),
 
-    GoRoute(
-      path: '/deposit',
-      name: 'deposit',
-      builder: (context, state) {
-        return const DepositPage();
-      },
-    ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/transactions',
+                name: 'transactions',
 
-    GoRoute(
-      path: '/withdraw',
-      name: 'withdraw',
-      builder: (context, state) {
-        return const WithdrawPage();
-      },
-    ),
-    GoRoute(
-      path: '/bills',
-      name: 'bills',
-      builder: (context, state) {
-        return const BillsPage();
-      },
-    ),
+                builder: (context, state) {
+                  return const TransactionHistoryPage();
+                },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                name: 'profile',
+                builder: (context, state) {
+                  return const ProfilePage();
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
 
-    GoRoute(
-      path: '/transfer',
-      name: 'transfer',
-      builder: (context, state) {
-        return const TransferPage();
-      },
-    ),
-  ],
+      GoRoute(
+        path: '/deposit',
+        name: 'deposit',
+        builder: (context, state) {
+          return const DepositPage();
+        },
+      ),
 
-  errorBuilder: (context, state) {
-    return Scaffold(body: Center(child: Text('Page not found: ${state.uri}')));
-  },
-);
+      GoRoute(
+        path: '/withdraw',
+        name: 'withdraw',
+        builder: (context, state) {
+          return const WithdrawPage();
+        },
+      ),
+      GoRoute(
+        path: '/bills',
+        name: 'bills',
+        builder: (context, state) {
+          return const BillsPage();
+        },
+      ),
+
+      GoRoute(
+        path: '/transfer',
+        name: 'transfer',
+        builder: (context, state) {
+          return const TransferPage();
+        },
+      ),
+
+      GoRoute(
+        path: '/transaction-overview',
+        builder: (context, state) => const TransactionOverviewPage(),
+      ),
+    ],
+
+    errorBuilder: (context, state) {
+      return Scaffold(
+        body: Center(child: Text('Page not found: ${state.uri}')),
+      );
+    },
+  );
+}

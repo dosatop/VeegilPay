@@ -11,6 +11,9 @@ class CustomTextfield extends StatefulWidget {
   final bool showPasswordToggle;
   final TextInputType textInputType;
   final String? Function(String?)? validator;
+  final bool forceObscure;
+  final bool enabled;
+
   final List<TextInputFormatter>? inputFormatters;
 
   const CustomTextfield({
@@ -24,6 +27,8 @@ class CustomTextfield extends StatefulWidget {
     this.showPasswordToggle = false,
     this.validator,
     this.inputFormatters,
+    this.forceObscure = false,
+    this.enabled = true,
   });
 
   @override
@@ -46,6 +51,17 @@ class _CustomTextfieldState extends State<CustomTextfield> {
   }
 
   @override
+  void didUpdateWidget(CustomTextfield oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.forceObscure && !oldWidget.forceObscure) {
+      setState(() {
+        _obscureText = true;
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _focusNode.dispose();
     super.dispose();
@@ -65,6 +81,7 @@ class _CustomTextfieldState extends State<CustomTextfield> {
         const SizedBox(height: 5),
 
         TextFormField(
+          enabled: widget.enabled,
           obscureText: _obscureText,
 
           focusNode: _focusNode,
@@ -134,7 +151,6 @@ class _CustomTextfieldState extends State<CustomTextfield> {
               borderSide: const BorderSide(color: AppColors.error, width: 2),
             ),
 
-            // Keeps error text outside the box
             errorStyle: const TextStyle(height: 0.8, fontSize: 12),
           ),
         ),

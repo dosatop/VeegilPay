@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-
 import 'package:veegil_pay/core/theme/app_colors.dart';
-import 'package:veegil_pay/core/widgets/money_overview_chart.dart';
 import 'package:veegil_pay/core/widgets/transaction_shimmer.dart';
 import 'package:veegil_pay/features/transaction/model/transaction_model.dart';
 import 'package:veegil_pay/features/transaction/provider/transaction_history_provider.dart';
@@ -19,8 +18,6 @@ class TransactionHistoryPage extends ConsumerStatefulWidget {
 class _TransactionHistoryPageState
     extends ConsumerState<TransactionHistoryPage> {
   String selectedFilter = "All";
-
-  bool showChart = false;
 
   final List<String> filters = [
     "All",
@@ -40,12 +37,10 @@ class _TransactionHistoryPageState
 
         actions: [
           IconButton(
-            icon: Icon(showChart ? Icons.close : Icons.analytics_outlined),
+            icon: Icon(Icons.analytics_outlined),
 
             onPressed: () {
-              setState(() {
-                showChart = !showChart;
-              });
+              context.push("/transaction-overview");
             },
           ),
         ],
@@ -59,27 +54,10 @@ class _TransactionHistoryPageState
         data: (items) {
           final filtered = filterTransactions(items);
 
-          final depositAmount = items
-              .where((e) => e.type == "credit" && e.counterparty == null)
-              .fold<double>(0, (sum, e) => sum + e.amount);
-
-          final withdrawalAmount = items
-              .where((e) => e.type == "debit" && e.counterparty == null)
-              .fold<double>(0, (sum, e) => sum + e.amount);
-
-          final transferReceivedAmount = items
-              .where((e) => e.type == "credit" && e.counterparty != null)
-              .fold<double>(0, (sum, e) => sum + e.amount);
-
-          final transferSentAmount = items
-              .where((e) => e.type == "debit" && e.counterparty != null)
-              .fold<double>(0, (sum, e) => sum + e.amount);
-
           return Column(
             children: [
               const SizedBox(height: 12),
 
-              // CATEGORY FILTER BAR
               SizedBox(
                 height: 45,
 
@@ -162,31 +140,6 @@ class _TransactionHistoryPageState
               ),
 
               const SizedBox(height: 10),
-
-              // HIDDEN / SHOWN CHART
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-
-                curve: Curves.easeInOut,
-
-                child: showChart
-                    ? Column(
-                        children: [
-                          MoneyOverviewChart(
-                            deposit: depositAmount,
-
-                            withdrawal: withdrawalAmount,
-
-                            transferReceived: transferReceivedAmount,
-
-                            transferSent: transferSentAmount,
-                          ),
-
-                          const SizedBox(height: 10),
-                        ],
-                      )
-                    : const SizedBox(),
-              ),
 
               Expanded(
                 child: filtered.isEmpty

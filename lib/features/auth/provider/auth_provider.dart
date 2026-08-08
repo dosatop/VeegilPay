@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:veegil_pay/core/errors/app_exception.dart';
 import 'package:veegil_pay/features/auth/models/signup_request.dart';
 import 'package:veegil_pay/features/dashboard/provider/dashboard_provider.dart';
 import '../../../core/network/dio_provider.dart';
@@ -20,7 +22,7 @@ class AuthNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
-  Future<bool> login(LogInRequest request) async {
+  Future<String?> login(LogInRequest request) async {
     state = const AsyncLoading();
 
     try {
@@ -32,15 +34,29 @@ class AuthNotifier extends AsyncNotifier<void> {
 
       state = const AsyncData(null);
 
-      return true;
+      return null;
     } catch (error, stackTrace) {
+    
       state = AsyncError(error, stackTrace);
 
-      return false;
+      if (error is DioException) {
+        if (error.type == DioExceptionType.connectionError ||
+            error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.receiveTimeout ||
+            error.type == DioExceptionType.sendTimeout) {
+          return "NETWORK_ERROR";
+        }
+      }
+
+      if (error is AppException) {
+        return error.code;
+      }
+
+      return "UNKNOWN_ERROR";
     }
   }
 
-  Future<bool> signup(SignupRequest request) async {
+  Future<String?> signup(SignupRequest request) async {
     state = const AsyncLoading();
 
     try {
@@ -48,16 +64,23 @@ class AuthNotifier extends AsyncNotifier<void> {
 
       final response = await repository.signup(request);
 
-      // Save user after signup
       ref.read(userProvider.notifier).state = response.user;
 
       state = const AsyncData(null);
 
-      return true;
+      return null;
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
 
-      return false;
+      if (error is DioException && error.error == "NETWORK_ERROR") {
+        return "NETWORK_ERROR";
+      }
+
+      if (error is AppException) {
+        return error.code;
+      }
+
+      return "SIGNUP_FAILED";
     }
   }
 
@@ -85,7 +108,6 @@ class AuthNotifier extends AsyncNotifier<void> {
 
       await repository.logout();
 
-      // Clear user
       ref.read(userProvider.notifier).state = null;
 
       state = const AsyncData(null);

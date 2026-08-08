@@ -36,26 +36,25 @@ class OverlayPill extends StatelessWidget {
       ),
     );
   }
-
-
 }
-  void showOverlayPill(BuildContext context, String message) {
-    final overlay = Overlay.of(context);
 
-    final entry = OverlayEntry(
-      builder: (context) => Positioned(
-        bottom: 25,
-        left: 0,
-        right: 0,
-        child: OverlayPill(message: message),
-      ),
-    );
+void showOverlayPill(BuildContext context, String message) {
+  final overlay = Overlay.of(context);
 
-    overlay.insert(entry);
+  final entry = OverlayEntry(
+    builder: (context) => Positioned(
+      bottom: 50,
+      left: 0,
+      right: 0,
+      child: OverlayPill(message: message),
+    ),
+  );
 
-    Future.delayed(const Duration(seconds: 2), () {
-      if (entry.mounted) {
-        entry.remove();
-      }
-    });
-  }
+  overlay.insert(entry);
+
+  Future.delayed(const Duration(seconds: 2), () {
+    if (entry.mounted) {
+      entry.remove();
+    }
+  });
+}

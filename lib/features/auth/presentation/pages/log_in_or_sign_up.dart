@@ -13,7 +13,6 @@ class LogInOrSignUp extends StatefulWidget {
 
 class _LogInOrSignUpState extends State<LogInOrSignUp> {
   late bool isLogin;
-  // Change this to false to show the register page
 
   @override
   void initState() {
@@ -25,6 +24,11 @@ class _LogInOrSignUpState extends State<LogInOrSignUp> {
     setState(() {
       isLogin = !isLogin;
     });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override

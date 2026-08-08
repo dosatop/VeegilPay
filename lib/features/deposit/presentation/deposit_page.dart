@@ -23,6 +23,7 @@ class _DepositPageState extends ConsumerState<DepositPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _amountController = TextEditingController();
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -58,9 +59,34 @@ class _DepositPageState extends ConsumerState<DepositPage> {
                 ),
               ),
 
-              const SizedBox(height: 25),
+              SizedBox(
+                height: 35,
+                child: Center(
+                  child: _errorMessage != null
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.cancel,
+                              size: 18,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
+              ),
 
               CustomTextfield(
+                enabled: !transactionState.isLoading,
                 controller: _amountController,
 
                 hintText: "Enter amount",
@@ -110,6 +136,10 @@ class _DepositPageState extends ConsumerState<DepositPage> {
                             return;
                           }
 
+                          setState(() {
+                            _errorMessage = null;
+                          });
+
                           final request = DepositRequest(
                             phoneNumber: user!.phoneNumber,
 
@@ -138,15 +168,13 @@ class _DepositPageState extends ConsumerState<DepositPage> {
 
                             context.pop();
                           } else {
-                            final errorMessage = ref
-                                .read(transactionProvider)
-                                .error;
+                            final error = ref.read(transactionProvider).error;
 
-                            showOverlayPill(
-                              context,
-                              errorMessage?.toString() ??
-                                  "Something went wrong",
-                            );
+                            setState(() {
+                              _errorMessage = getDepositErrorMessage(
+                                error.toString(),
+                              );
+                            });
                           }
                         },
 
@@ -169,5 +197,28 @@ class _DepositPageState extends ConsumerState<DepositPage> {
         ),
       ),
     );
+  }
+
+  String getDepositErrorMessage(String code) {
+    switch (code) {
+      case "NETWORK_ERROR":
+      case "NO_CONNECTION":
+        return "No internet connection. Please check your network";
+
+      case "AMOUNT_TOO_LARGE":
+        return "The amount is too large";
+
+      case "AMOUNT_TOO_SMALL":
+        return "The amount is below the minimum limit";
+
+      case "ACCOUNT_NOT_FOUND":
+        return "Account not found";
+
+      case "UNAUTHORIZED":
+        return "Session expired, please login again";
+
+      default:
+        return "Unable to complete deposit. Please try again";
+    }
   }
 }

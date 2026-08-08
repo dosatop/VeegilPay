@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:veegil_pay/core/theme/app_colors.dart';
 import 'package:veegil_pay/core/utils/text_input_formater.dart';
 import 'package:veegil_pay/core/widgets/custom_textfield.dart';
 import 'package:veegil_pay/core/widgets/overlay_pill.dart';
 
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
+import 'package:veegil_pay/features/dashboard/provider/dashboard_provider.dart';
 import 'package:veegil_pay/features/transaction/provider/transaction_history_provider.dart';
 import 'package:veegil_pay/features/transaction/provider/transaction_provider.dart';
 import 'package:veegil_pay/features/transfer/models/transfer_request.dart';
@@ -25,7 +25,10 @@ class _TransferPageState extends ConsumerState<TransferPage> {
 
   final _receiverController = TextEditingController();
   final _amountController = TextEditingController();
+
   bool? _receiverExists;
+  String? _errorMessage;
+  bool _isSelfTransfer = false;
 
   @override
   void initState() {
@@ -41,16 +44,30 @@ class _TransferPageState extends ConsumerState<TransferPage> {
   void _checkReceiver() {
     final phone = _receiverController.text.trim();
 
-    if (phone.isEmpty) {
+    setState(() {});
+
+    final currentUser = ref.read(userProvider);
+
+    if (phone.length < 11) {
       setState(() {
         _receiverExists = null;
+        _isSelfTransfer = false;
+        _errorMessage = null;
       });
+      return;
+    }
 
+    _isSelfTransfer = phone == currentUser?.phoneNumber;
+
+    if (_isSelfTransfer) {
+      setState(() {
+        _receiverExists = null;
+        _errorMessage = "You cannot transfer money to yourself";
+      });
       return;
     }
 
     final users = ref.read(accountUsersProvider);
-
     final exists = users.any((user) => user.phoneNumber == phone);
 
     setState(() {
@@ -72,94 +89,130 @@ class _TransferPageState extends ConsumerState<TransferPage> {
   Widget build(BuildContext context) {
     ref.watch(accountUsersProvider);
     final transactionState = ref.watch(transactionProvider);
-
-    final theme = Theme.of(context);
+    final canTransfer = _receiverExists == true && !_isSelfTransfer;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Transfer")),
 
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(10),
 
         child: Form(
           key: _formKey,
 
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
-              Text(
-                "Send Money",
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.black,
+              SizedBox(
+                height: 35,
+                child: Center(
+                  child: _errorMessage != null || _receiverExists != null
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _errorMessage != null
+                                  ? Icons.cancel
+                                  : (_receiverExists!
+                                        ? Icons.check_circle
+                                        : Icons.cancel),
+                              size: 18,
+                              color: _errorMessage != null
+                                  ? Colors.red
+                                  : (_receiverExists!
+                                        ? Colors.green
+                                        : Colors.red),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _errorMessage ??
+                                  (_receiverExists!
+                                      ? "Account found"
+                                      : "Account does not exist"),
+                              style: TextStyle(
+                                color: _errorMessage != null
+                                    ? Colors.red
+                                    : (_receiverExists!
+                                          ? Colors.green
+                                          : Colors.red),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        )
+                      : null,
                 ),
               ),
 
-              const SizedBox(height: 25),
+              Consumer(
+                builder: (context, ref, child) {
+                  final users = ref.watch(accountUsersProvider);
+                  final currentUser = ref.watch(userProvider);
 
-              CustomTextfield(
-                controller: _receiverController,
+                  final filteredUsers = users.where((user) {
+                    return user.phoneNumber.contains(
+                          _receiverController.text.trim(),
+                        ) &&
+                        user.phoneNumber != currentUser?.phoneNumber;
+                  }).toList();
 
-                hintText: "Receiver phone number",
+                  return Column(
+                    children: [
+                      CustomTextfield(
+                        enabled: !transactionState.isLoading,
+                        controller: _receiverController,
+                        hintText: "Search receiver account",
+                        iconType: Icons.phone,
+                        textFieldName: "Receiver",
+                        textInputType: TextInputType.phone,
+                        obscureText: false,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return "Receiver phone number is required";
+                          }
+                          return null;
+                        },
+                      ),
 
-                iconType: Icons.phone,
+                      const SizedBox(height: 10),
 
-                textFieldName: "Receiver",
+                      if (filteredUsers.isNotEmpty)
+                        SizedBox(
+                          height: 150,
+                          child: ListView.builder(
+                            itemCount: filteredUsers.length,
+                            itemBuilder: (context, index) {
+                              final user = filteredUsers[index];
 
-                textInputType: TextInputType.phone,
+                              return ListTile(
+                                leading: const CircleAvatar(
+                                  child: Icon(Icons.person),
+                                ),
 
-                obscureText: false,
+                                title: Text(user.phoneNumber),
 
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return "Receiver phone number is required";
-                  }
-
-                  return null;
+                                onTap: () {
+                                  setState(() {
+                                    _receiverController.text = user.phoneNumber;
+                                    _receiverExists = true;
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  );
                 },
               ),
-              if (_receiverExists != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _receiverExists! ? Icons.check_circle : Icons.cancel,
-                        size: 18,
-                        color: _receiverExists! ? Colors.green : Colors.red,
-                      ),
-
-                      const SizedBox(width: 6),
-
-                      Text(
-                        _receiverExists!
-                            ? "Account found"
-                            : "Account does not exist",
-                        style: TextStyle(
-                          color: _receiverExists! ? Colors.green : Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: 20),
-
               CustomTextfield(
+                enabled: !transactionState.isLoading,
                 controller: _amountController,
-
                 hintText: "Enter amount",
-
                 iconType: Icons.money,
-
                 textFieldName: "Amount",
-
                 textInputType: TextInputType.number,
-
                 obscureText: false,
-
                 inputFormatters: [AmountInputFormatter()],
-
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return "Amount is required";
@@ -183,11 +236,10 @@ class _TransferPageState extends ConsumerState<TransferPage> {
 
               SizedBox(
                 width: double.infinity,
-
                 height: 52,
 
                 child: ElevatedButton(
-                  onPressed: transactionState.isLoading
+                  onPressed: transactionState.isLoading || !canTransfer
                       ? null
                       : () async {
                           FocusScope.of(context).unfocus();
@@ -195,17 +247,11 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                           if (!_formKey.currentState!.validate()) {
                             return;
                           }
+                          setState(() {
+                            _errorMessage = null;
+                          });
 
                           final receiver = _receiverController.text.trim();
-
-                          if (_receiverExists != true) {
-                            showOverlayPill(
-                              context,
-                              "Receiver account does not exist",
-                            );
-
-                            return;
-                          }
 
                           final request = TransferRequest(
                             phoneNumber: receiver,
@@ -237,10 +283,9 @@ class _TransferPageState extends ConsumerState<TransferPage> {
 
                             context.pop();
                           } else {
-                            showOverlayPill(
-                              context,
-                              getTransferErrorMessage(error),
-                            );
+                            setState(() {
+                              _errorMessage = getTransferErrorMessage(error);
+                            });
                           }
                         },
 
@@ -265,23 +310,26 @@ class _TransferPageState extends ConsumerState<TransferPage> {
     );
   }
 
-  String getTransferErrorMessage(String? error) {
-    if (error == null || error.isEmpty) {
-      return "Transfer failed";
-    }
+  String getTransferErrorMessage(String? code) {
+    switch (code) {
+      case "NETWORK_ERROR":
+      case "NO_CONNECTION":
+        return "No internet connection. Please check your network";
 
-    if (error.contains("RECIPIENT_NOT_FOUND")) {
-      return "The receiver account does not exist";
-    }
+      case "RECIPIENT_NOT_FOUND":
+        return "The receiver account does not exist";
 
-    if (error.contains("INSUFFICIENT_FUNDS")) {
-      return "You do not have enough balance";
-    }
+      case "INSUFFICIENT_FUNDS":
+        return "You do not have enough balance";
 
-    if (error.contains("TRANSFER_TO_SELF")) {
-      return "You cannot transfer money to yourself";
-    }
+      case "TRANSFER_TO_SELF":
+        return "You cannot transfer money to yourself";
 
-    return "Unable to complete transfer. Please try again";
+      case "AMOUNT_TOO_LARGE":
+        return "The amount is too large";
+
+      default:
+        return "Unable to complete transfer. Please try again";
+    }
   }
 }

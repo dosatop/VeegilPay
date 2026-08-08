@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:veegil_pay/core/network/dio_provider.dart';
 import 'package:veegil_pay/core/theme/app_colors.dart';
 import 'package:veegil_pay/core/widgets/custom_textfield.dart';
+import 'package:veegil_pay/core/widgets/overlay_pill.dart';
 import 'package:veegil_pay/features/auth/models/login_info.dart';
 import 'package:veegil_pay/features/auth/provider/auth_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:veegil_pay/features/auth/models/login_request.dart';
 import 'package:veegil_pay/features/auth/provider/saved_login_provider.dart';
-// import 'package:veegil_pay/core/widgets/horizontal_divider.dart';
+import 'package:veegil_pay/features/profile/presentation/overlay_providerd.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   final Function()? onTogglePage;
@@ -21,7 +22,6 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  // final StorageService storageService = StorageService();
   final _formKey = GlobalKey<FormState>();
 
   final _phoneController = TextEditingController();
@@ -34,7 +34,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(savedLoginProvider.notifier).loadSavedLogin();
+      final message = ref.read(overlayMessageProvider);
+
+      if (message != null) {
+        showOverlayPill(context, message);
+
+        ref.read(overlayMessageProvider.notifier).state = null;
+      }
     });
   }
 
@@ -48,8 +54,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final savedLogin = ref.watch(savedLoginProvider);
-
+  
     final showPhoneNumberInput = savedLogin.phoneNumber == null;
+   
     final authState = ref.watch(authProvider);
 
     final size = MediaQuery.of(context).size;
@@ -138,7 +145,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ],
                       ),
                       SizedBox(height: size.height * 0.08),
-                      // FORM
+
                       Padding(
                         padding: EdgeInsets.symmetric(
                           horizontal: size.width * 0.08,
@@ -151,6 +158,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             children: [
                               if (showPhoneNumberInput)
                                 CustomTextfield(
+                                  enabled: !authState.isLoading,
                                   hintText: "Account Number",
                                   controller: _phoneController,
                                   iconType: Icons.email_outlined,
@@ -175,11 +183,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               const SizedBox(height: 8),
 
                               CustomTextfield(
+                                enabled: !authState.isLoading,
                                 hintText: "Password",
                                 obscureText: true,
                                 controller: _passwordController,
-                                showPasswordToggle: true,
+                                showPasswordToggle: !authState.isLoading,
                                 iconType: Icons.lock_clock_outlined,
+                                forceObscure: authState.isLoading,
 
                                 textFieldName: 'Password',
 
@@ -198,98 +208,112 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 textInputType: TextInputType.visiblePassword,
                               ),
 
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 10),
                               SizedBox(
-                                height: 25,
-                                child: _errorMessage == null
-                                    ? null
-                                    : Text(
-                                        _errorMessage!,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 14,
-                                        ),
-                                      ),
+                                height: 20,
+                                child: Center(
+                                  child: _errorMessage != null
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(
+                                              Icons.cancel,
+                                              size: 18,
+                                              color: Colors.red,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Flexible(
+                                              child: Text(
+                                                _errorMessage!,
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  color: Colors.red,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : null,
+                                ),
                               ),
+                              const SizedBox(height: 10),
                               SizedBox(
                                 width: double.infinity,
                                 height: 50,
 
                                 child: ElevatedButton(
-                                  onPressed: authState.isLoading
-                                      ? null
-                                      : () async {
-                                          FocusScope.of(context).unfocus();
+                                  onPressed: () async {
+                                    FocusScope.of(context).unfocus();
 
-                                          if (!_formKey.currentState!
-                                              .validate()) {
-                                            return;
-                                          }
+                                    if (!_formKey.currentState!.validate()) {
+                                      return;
+                                    }
 
-                                          setState(() {
-                                            _errorMessage = null;
-                                          });
+                                    setState(() {
+                                      _errorMessage = null;
+                                    });
 
-                                          final request = LogInRequest(
-                                            phoneNumber: showPhoneNumberInput
-                                                ? _phoneController.text.trim()
-                                                : savedLogin.phoneNumber!,
-                                            password: _passwordController.text
-                                                .trim(),
-                                          );
+                                    final request = LogInRequest(
+                                      phoneNumber: showPhoneNumberInput
+                                          ? _phoneController.text.trim()
+                                          : savedLogin.phoneNumber!,
+                                      password: _passwordController.text.trim(),
+                                    );
 
-                                          final success = await ref
-                                              .read(authProvider.notifier)
-                                              .login(request);
+                                    final error = await ref
+                                        .read(authProvider.notifier)
+                                        .login(request);
 
-                                          final storage = ref.read(
-                                            secureStorageProvider,
-                                          );
-                                          if (success) {
-                                            await storage.saveLoginInfo(
-                                              LoginInfo(
-                                                phoneNumber:
-                                                    request.phoneNumber,
-                                              ),
-                                            );
+                                    if (!mounted) return;
 
-                                            await ref
-                                                .read(
-                                                  savedLoginProvider.notifier,
-                                                )
-                                                .loadSavedLogin();
+                                    if (error == null) {
+                                      final storage = ref.read(
+                                        secureStorageProvider,
+                                      );
 
-                                            if (!mounted) return;
+                                      await storage.saveLoginInfo(
+                                        LoginInfo(
+                                          phoneNumber: request.phoneNumber,
+                                        ),
+                                      );
 
-                                            context.go('/dashboard');
-                                          } else {
-                                            await storage.clearLoginInfo();
-                                            if (!mounted) return;
+                                      await ref
+                                          .read(savedLoginProvider.notifier)
+                                          .loadSavedLogin();
 
-                                            final errorMessage = ref
-                                                .read(authProvider)
-                                                .error;
+                                      if (!mounted) return;
 
-                                            setState(() {
-                                              _errorMessage =
-                                                  !showPhoneNumberInput &&
-                                                      (errorMessage
-                                                          .toString()
-                                                          .contains("Invalid"))
-                                                  ? "Incorrect password"
-                                                  : errorMessage?.toString() ??
-                                                        "Login failed";
-                                            });
-                                          }
-                                        },
+                                      showOverlayPill(
+                                        context,
+                                        "Login Successful",
+                                      );
+
+                                      context.go('/dashboard');
+                                    } else {
+                                      if (!mounted) return;
+
+                                      setState(() {
+                                        _errorMessage = getLoginErrorMessage(
+                                          !showPhoneNumberInput &&
+                                                  error.contains(
+                                                    "INVALID_CREDENTIALS",
+                                                  )
+                                              ? "INVALID_PASSWORD"
+                                              : error,
+                                        );
+                                      });
+                                    }
+                                  },
 
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF091993),
                                     foregroundColor: Colors.white,
                                   ),
 
-                                  child: authState.isLoading
+                                  child: ref.watch(authProvider).isLoading
                                       ? const SizedBox(
                                           height: 22,
                                           width: 22,
@@ -314,6 +338,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   TextButton(
                                     onPressed: () async {
                                       if (!authState.isLoading) {
+                                        setState(() {
+                                          _errorMessage = null;
+                                        });
+
                                         final storage = ref.read(
                                           secureStorageProvider,
                                         );
@@ -370,5 +398,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ),
       ),
     );
+  }
+
+  String getLoginErrorMessage(String error) {
+    switch (error) {
+      case "NETWORK_ERROR":
+        return "No internet connection. Please check your network";
+
+      case "INVALID_CREDENTIALS":
+        return "Incorrect account number or password";
+
+      case "ACCOUNT_NOT_FOUND":
+      case "USER_NOT_FOUND":
+        return "Account not found";
+
+      case "INVALID_PASSWORD":
+      case "PASSWORD_INVALID":
+        return "Incorrect password";
+
+      case "UNAUTHORIZED":
+        return "Session expired, please login again";
+
+      default:
+        return error.isNotEmpty ? error : "Unable to login. Please try again";
+    }
   }
 }

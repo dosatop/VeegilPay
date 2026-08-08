@@ -29,7 +29,7 @@ class AccountApi {
 
     } on DioException catch (e) {
       throw AppException(
-        ApiErrorHandler.getMessage(e),
+        ApiErrorHandler.getCode(e),
       );
     }
   }
